@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+import { useEffect, useState } from 'react';
+import type { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import type { Profile, AppRole } from '@/types/database';
+import type { AppRole, Profile } from '@/types/database';
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
@@ -10,67 +10,72 @@ export function useAuth() {
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        // Defer profile/roles fetch
-        if (session?.user) {
-          setTimeout(() => {
-            fetchProfile(session.user.id);
-            fetchRoles(session.user.id);
-          }, 0);
-        } else {
-          setProfile(null);
-          setRoles([]);
-        }
-      }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        fetchProfile(session.user.id);
-        fetchRoles(session.user.id);
-      }
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const fetchProfile = async (userId: string) => {
+  async function fetchProfile(userId: string) {
     const { data } = await supabase
       .from('profiles')
       .select('*')
       .eq('user_id', userId)
       .maybeSingle();
-    
-    if (data) {
-      setProfile(data as Profile);
-    }
-  };
 
-  const fetchRoles = async (userId: string) => {
+    setProfile((data as Profile) ?? null);
+  }
+
+  async function fetchRoles(userId: string) {
     const { data } = await supabase
       .from('user_roles')
       .select('role')
       .eq('user_id', userId);
-    
-    if (data) {
-      setRoles(data.map(r => r.role as AppRole));
-    }
-  };
+
+    setRoles((data ?? []).map((r) => r.role as AppRole));
+  }
+
+  async function loadUserData(userId: string) {
+    await Promise.all([fetchProfile(userId), fetchRoles(userId)]);
+  }
+
+  useEffect(() => {
+    // Listener FIRST
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setLoading(true);
+
+      if (session?.user) {
+        // IMPORTANT: defer any Supabase calls out of the callback
+        setTimeout(() => {
+          loadUserData(session.user.id).finally(() => setLoading(false));
+        }, 0);
+      } else {
+        setProfile(null);
+        setRoles([]);
+        setLoading(false);
+      }
+    });
+
+    // THEN initial session
+    supabase.auth
+      .getSession()
+      .then(async ({ data: { session } }) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+
+        if (session?.user) {
+          await loadUserData(session.user.id);
+        } else {
+          setProfile(null);
+          setRoles([]);
+        }
+      })
+      .finally(() => setLoading(false));
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const signUp = async (email: string, password: string, displayName?: string) => {
     const redirectUrl = `${window.location.origin}/`;
-    
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -81,7 +86,7 @@ export function useAuth() {
         },
       },
     });
-    
+
     return { data, error };
   };
 
@@ -90,7 +95,7 @@ export function useAuth() {
       email,
       password,
     });
-    
+
     return { data, error };
   };
 
@@ -120,3 +125,4 @@ export function useAuth() {
     isAdmin,
   };
 }
+
