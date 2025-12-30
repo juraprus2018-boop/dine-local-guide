@@ -69,8 +69,8 @@ function FlyToLocation({ location, zoom }: { location: { lat: number; lng: numbe
 
 const RestaurantMap: React.FC<RestaurantMapProps> = ({
   restaurants = [],
-  center = [52.1326, 5.4697], // Center of Netherlands (lat, lng for Leaflet)
-  zoom = 7,
+  center = [52.2130, 5.2794], // Center of Netherlands
+  zoom = 8,
   onLocationSelect,
   interactive = false,
   selectedLocation,
