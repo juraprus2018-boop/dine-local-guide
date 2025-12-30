@@ -36,12 +36,12 @@ export function Header() {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-6">
             <Link 
-              to="/ontdek" 
+              to="/provincies" 
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               <span className="flex items-center gap-1.5">
                 <MapPin className="h-4 w-4" />
-                Ontdek
+                Provincies
               </span>
             </Link>
             <Link 
@@ -49,6 +49,12 @@ export function Header() {
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               Keukens
+            </Link>
+            <Link 
+              to="/ontdek" 
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Ontdek
             </Link>
           </nav>
 
