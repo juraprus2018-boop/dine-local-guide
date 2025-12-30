@@ -1,1 +1,4 @@
 project_id = "eoxcxesrejwbczhyjjsf"
+
+[functions.import-google-places]
+verify_jwt = false

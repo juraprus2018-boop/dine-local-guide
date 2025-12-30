@@ -111,7 +111,6 @@ export default function AdminImportPage() {
               </CardHeader>
               <CardContent>
                 <RestaurantMap
-                  center={[5.4697, 52.1326]} // Center of Netherlands
                   zoom={8}
                   interactive
                   onLocationSelect={handleLocationSelect}
