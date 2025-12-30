@@ -36,13 +36,19 @@ export function Header() {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-6">
             <Link 
-              to="/provincies" 
+              to="/in-de-buurt" 
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               <span className="flex items-center gap-1.5">
                 <MapPin className="h-4 w-4" />
-                Provincies
+                In de buurt
               </span>
+            </Link>
+            <Link 
+              to="/provincies" 
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Provincies
             </Link>
             <Link 
               to="/keukens" 
@@ -164,11 +170,18 @@ export function Header() {
               Zoeken
             </Link>
             <Link
-              to="/ontdek"
+              to="/in-de-buurt"
               className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium hover:bg-muted"
               onClick={() => setMobileMenuOpen(false)}
             >
               <MapPin className="h-4 w-4" />
+              In de buurt
+            </Link>
+            <Link
+              to="/ontdek"
+              className="rounded-lg px-3 py-2 text-sm font-medium hover:bg-muted"
+              onClick={() => setMobileMenuOpen(false)}
+            >
               Ontdek
             </Link>
             <Link

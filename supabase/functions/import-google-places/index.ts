@@ -291,7 +291,7 @@ serve(async (req) => {
     console.log(`Searching for restaurants near ${latitude}, ${longitude} within ${radius}m`);
 
     // Search for restaurants using Google Places API with more fields
-    const searchUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=${radius}&type=restaurant&key=${googleApiKey}`;
+    const searchUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&radius=${radius}&type=restaurant&language=nl&key=${googleApiKey}`;
     
     const searchResponse = await fetch(searchUrl);
     const searchData = await searchResponse.json();
@@ -325,7 +325,7 @@ serve(async (req) => {
         }
 
         // Get place details with maximum fields
-        const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${place.place_id}&fields=name,formatted_address,geometry,rating,user_ratings_total,price_level,formatted_phone_number,international_phone_number,website,url,opening_hours,photos,types,address_components,reviews,editorial_summary&key=${googleApiKey}`;
+        const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${place.place_id}&fields=name,formatted_address,geometry,rating,user_ratings_total,price_level,formatted_phone_number,international_phone_number,website,url,opening_hours,photos,types,address_components,reviews,editorial_summary&language=nl&reviews_sort=newest&key=${googleApiKey}`;
         
         const detailsResponse = await fetch(detailsUrl);
         const detailsData = await detailsResponse.json();
