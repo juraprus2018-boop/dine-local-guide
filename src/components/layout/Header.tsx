@@ -12,6 +12,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
+import happioLogo from '@/assets/happio-logo.png';
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -28,11 +29,8 @@ export function Header() {
       <div className="container-wide">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-display font-bold text-xl">
-              H
-            </div>
-            <span className="font-display text-xl font-semibold">Happio</span>
+          <Link to="/" className="flex items-center">
+            <img src={happioLogo} alt="Happio" className="h-10" />
           </Link>
 
           {/* Desktop Navigation */}
