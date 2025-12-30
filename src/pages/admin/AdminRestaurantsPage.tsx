@@ -137,7 +137,7 @@ export default function AdminRestaurantsPage() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => toast.message('Bewerken komt binnenkort')}
+                            onClick={() => navigate(`/admin/restaurants/${restaurant.id}/edit`)}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>

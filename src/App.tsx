@@ -15,6 +15,7 @@ import DiscoverPage from "./pages/DiscoverPage";
 import CuisinesPage from "./pages/CuisinesPage";
 import AdminPage from "./pages/admin/AdminPage";
 import AdminRestaurantsPage from "./pages/admin/AdminRestaurantsPage";
+import AdminRestaurantEditPage from "./pages/admin/AdminRestaurantEditPage";
 import AdminImportPage from "./pages/admin/AdminImportPage";
 import AdminClaimsPage from "./pages/admin/AdminClaimsPage";
 
@@ -37,6 +38,7 @@ const App = () => (
             <Route path="/profiel" element={<ProfilePage />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/admin/restaurants" element={<AdminRestaurantsPage />} />
+            <Route path="/admin/restaurants/:id/edit" element={<AdminRestaurantEditPage />} />
             <Route path="/admin/import" element={<AdminImportPage />} />
             <Route path="/admin/claims" element={<AdminClaimsPage />} />
             <Route path="/:citySlug" element={<CityPage />} />
