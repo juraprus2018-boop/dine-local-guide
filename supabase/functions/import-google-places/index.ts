@@ -10,6 +10,7 @@ interface GooglePlace {
   place_id: string;
   name: string;
   formatted_address: string;
+  vicinity?: string;
   geometry: {
     location: {
       lat: number;
@@ -28,6 +29,18 @@ interface GooglePlace {
   photos?: Array<{
     photo_reference: string;
   }>;
+  address_components?: Array<{
+    long_name: string;
+    short_name: string;
+    types: string[];
+  }>;
+}
+
+interface CityInfo {
+  name: string;
+  province: string | null;
+  latitude: number;
+  longitude: number;
 }
 
 function slugify(text: string): string {
@@ -49,6 +62,46 @@ function mapPriceLevel(level?: number): string | null {
     4: '€€€€',
   };
   return priceMap[level] || '€€';
+}
+
+function extractCityInfo(addressComponents: GooglePlace['address_components'], lat: number, lng: number): CityInfo | null {
+  if (!addressComponents) return null;
+
+  let cityName: string | null = null;
+  let province: string | null = null;
+
+  for (const component of addressComponents) {
+    // City/town/village
+    if (component.types.includes('locality') || 
+        component.types.includes('sublocality') ||
+        component.types.includes('postal_town')) {
+      cityName = component.long_name;
+    }
+    // Province (administrative_area_level_1 in Netherlands)
+    if (component.types.includes('administrative_area_level_1')) {
+      province = component.long_name;
+    }
+  }
+
+  if (!cityName) return null;
+
+  return {
+    name: cityName,
+    province,
+    latitude: lat,
+    longitude: lng,
+  };
+}
+
+function extractPostalCode(addressComponents: GooglePlace['address_components']): string | null {
+  if (!addressComponents) return null;
+  
+  for (const component of addressComponents) {
+    if (component.types.includes('postal_code')) {
+      return component.long_name;
+    }
+  }
+  return null;
 }
 
 serve(async (req) => {
@@ -86,10 +139,10 @@ serve(async (req) => {
       throw new Error('Admin access required');
     }
 
-    const { latitude, longitude, radius = 5000, cityId } = await req.json();
+    const { latitude, longitude, radius = 5000 } = await req.json();
 
-    if (!latitude || !longitude || !cityId) {
-      throw new Error('Missing required parameters: latitude, longitude, cityId');
+    if (!latitude || !longitude) {
+      throw new Error('Missing required parameters: latitude, longitude');
     }
 
     const googleApiKey = Deno.env.get('GOOGLE_PLACES_API_KEY');
@@ -116,6 +169,8 @@ serve(async (req) => {
     const imported: string[] = [];
     const skipped: string[] = [];
     const errors: string[] = [];
+    const citiesCreated: string[] = [];
+    const cityCache: Map<string, string> = new Map(); // cityName -> cityId
 
     for (const place of places) {
       try {
@@ -131,8 +186,8 @@ serve(async (req) => {
           continue;
         }
 
-        // Get place details for more info
-        const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${place.place_id}&fields=name,formatted_address,geometry,rating,user_ratings_total,price_level,formatted_phone_number,website,opening_hours,photos,types&key=${googleApiKey}`;
+        // Get place details for more info including address_components
+        const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${place.place_id}&fields=name,formatted_address,geometry,rating,user_ratings_total,price_level,formatted_phone_number,website,opening_hours,photos,types,address_components&key=${googleApiKey}`;
         
         const detailsResponse = await fetch(detailsUrl);
         const detailsData = await detailsResponse.json();
@@ -144,7 +199,68 @@ serve(async (req) => {
 
         const details = detailsData.result as GooglePlace;
 
-        // Generate unique slug
+        // Extract city information from address components
+        const cityInfo = extractCityInfo(
+          details.address_components, 
+          details.geometry.location.lat, 
+          details.geometry.location.lng
+        );
+
+        if (!cityInfo) {
+          errors.push(`${place.name}: Could not extract city information`);
+          continue;
+        }
+
+        // Check if city exists or create it
+        let cityId: string;
+        const cachedCityId = cityCache.get(cityInfo.name.toLowerCase());
+        
+        if (cachedCityId) {
+          cityId = cachedCityId;
+        } else {
+          // Check database for existing city
+          const citySlug = slugify(cityInfo.name);
+          const { data: existingCity } = await supabase
+            .from('cities')
+            .select('id')
+            .eq('slug', citySlug)
+            .single();
+
+          if (existingCity) {
+            cityId = existingCity.id;
+            cityCache.set(cityInfo.name.toLowerCase(), cityId);
+          } else {
+            // Create new city
+            console.log(`Creating new city: ${cityInfo.name}, ${cityInfo.province}`);
+            
+            const { data: newCity, error: cityError } = await supabase
+              .from('cities')
+              .insert({
+                name: cityInfo.name,
+                slug: citySlug,
+                province: cityInfo.province,
+                latitude: cityInfo.latitude,
+                longitude: cityInfo.longitude,
+                description: `Ontdek de beste restaurants in ${cityInfo.name}${cityInfo.province ? `, ${cityInfo.province}` : ''}.`,
+                meta_title: `Restaurants in ${cityInfo.name} | Happio`,
+                meta_description: `Vind de beste restaurants in ${cityInfo.name}. Bekijk reviews, foto's en menu's van lokale eetgelegenheden.`,
+              })
+              .select()
+              .single();
+
+            if (cityError) {
+              console.error(`Error creating city ${cityInfo.name}:`, cityError);
+              errors.push(`${place.name}: Failed to create city ${cityInfo.name}`);
+              continue;
+            }
+
+            cityId = newCity.id;
+            cityCache.set(cityInfo.name.toLowerCase(), cityId);
+            citiesCreated.push(`${cityInfo.name}${cityInfo.province ? ` (${cityInfo.province})` : ''}`);
+          }
+        }
+
+        // Generate unique slug for restaurant
         let baseSlug = slugify(details.name);
         let slug = baseSlug;
         let counter = 1;
@@ -178,7 +294,14 @@ serve(async (req) => {
             'Thursday': 'thursday',
             'Friday': 'friday',
             'Saturday': 'saturday',
-            'Sunday': 'sunday'
+            'Sunday': 'sunday',
+            'Maandag': 'monday',
+            'Dinsdag': 'tuesday', 
+            'Woensdag': 'wednesday',
+            'Donderdag': 'thursday',
+            'Vrijdag': 'friday',
+            'Zaterdag': 'saturday',
+            'Zondag': 'sunday'
           };
           
           for (const dayText of details.opening_hours.weekday_text) {
@@ -186,7 +309,7 @@ serve(async (req) => {
             if (match) {
               const dayKey = dayMap[match[1]];
               const timeStr = match[2];
-              if (dayKey && timeStr !== 'Closed') {
+              if (dayKey && timeStr !== 'Closed' && timeStr !== 'Gesloten') {
                 const timeParts = timeStr.match(/(\d{1,2}:\d{2})\s*[–-]\s*(\d{1,2}:\d{2})/);
                 if (timeParts) {
                   openingHours[dayKey] = { open: timeParts[1], close: timeParts[2] };
@@ -196,6 +319,9 @@ serve(async (req) => {
           }
         }
 
+        // Extract postal code
+        const postalCode = extractPostalCode(details.address_components);
+
         // Insert restaurant
         const { data: restaurant, error: insertError } = await supabase
           .from('restaurants')
@@ -203,6 +329,7 @@ serve(async (req) => {
             name: details.name,
             slug,
             address: details.formatted_address,
+            postal_code: postalCode,
             latitude: details.geometry.location.lat,
             longitude: details.geometry.location.lng,
             city_id: cityId,
@@ -216,6 +343,8 @@ serve(async (req) => {
             opening_hours: openingHours,
             is_verified: false,
             is_claimed: false,
+            meta_title: `${details.name} | ${cityInfo.name} | Happio`,
+            meta_description: `${details.name} in ${cityInfo.name}. Bekijk reviews, openingstijden en contactgegevens.`,
           })
           .select()
           .single();
@@ -238,8 +367,8 @@ serve(async (req) => {
             });
         }
 
-        imported.push(details.name);
-        console.log(`Imported: ${details.name}`);
+        imported.push(`${details.name} (${cityInfo.name})`);
+        console.log(`Imported: ${details.name} in ${cityInfo.name}`);
 
       } catch (placeError: unknown) {
         const errorMsg = placeError instanceof Error ? placeError.message : 'Unknown error';
@@ -254,10 +383,12 @@ serve(async (req) => {
         imported: imported.length,
         skipped: skipped.length,
         errors: errors.length,
+        citiesCreated: citiesCreated.length,
         details: {
           imported,
           skipped,
           errors,
+          citiesCreated,
         },
       }),
       { 

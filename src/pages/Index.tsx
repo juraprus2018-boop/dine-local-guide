@@ -63,50 +63,52 @@ export default function Index() {
         <div className="absolute -bottom-1 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent" />
       </section>
 
-      {/* Popular Cities */}
-      <section className="py-16 md:py-24">
-        <div className="container-wide">
-          <div className="flex items-end justify-between mb-8">
-            <div>
-              <h2 className="font-display text-3xl font-semibold">Populaire steden</h2>
-              <p className="mt-2 text-muted-foreground">
-                Ontdek restaurants in de grootste steden van Nederland
-              </p>
+      {/* Popular Cities - Only show if there are cities */}
+      {(citiesLoading || popularCities.length > 0) && (
+        <section className="py-16 md:py-24">
+          <div className="container-wide">
+            <div className="flex items-end justify-between mb-8">
+              <div>
+                <h2 className="font-display text-3xl font-semibold">Populaire steden</h2>
+                <p className="mt-2 text-muted-foreground">
+                  Ontdek restaurants in steden door heel Nederland
+                </p>
+              </div>
+              <Button variant="ghost" asChild className="hidden md:flex">
+                <Link to="/ontdek">
+                  Alle steden
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
             </div>
-            <Button variant="ghost" asChild className="hidden md:flex">
-              <Link to="/ontdek">
-                Alle steden
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
-          </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {citiesLoading ? (
-              [...Array(6)].map((_, i) => (
-                <div key={i} className="aspect-[4/3] skeleton rounded-lg" />
-              ))
-            ) : (
-              popularCities.map((city, index) => (
-                <CityCard 
-                  key={city.id} 
-                  city={city}
-                  className={`animate-slide-up stagger-${index + 1}`}
-                />
-              ))
-            )}
-          </div>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {citiesLoading ? (
+                [...Array(6)].map((_, i) => (
+                  <div key={i} className="aspect-[4/3] skeleton rounded-lg" />
+                ))
+              ) : (
+                popularCities.map((city, index) => (
+                  <CityCard 
+                    key={city.id} 
+                    city={city}
+                    className={`animate-slide-up stagger-${index + 1}`}
+                  />
+                ))
+              )}
+            </div>
 
-          <div className="mt-6 text-center md:hidden">
-            <Button variant="outline" asChild>
-              <Link to="/ontdek">
-                Alle steden bekijken
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
+            <div className="mt-6 text-center md:hidden">
+              <Button variant="outline" asChild>
+                <Link to="/ontdek">
+                  Alle steden bekijken
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* Cuisines */}
       <section className="bg-muted/30 py-16 md:py-24">

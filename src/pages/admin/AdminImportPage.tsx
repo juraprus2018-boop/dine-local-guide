@@ -1,13 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, MapPin, Loader2 } from 'lucide-react';
+import { ArrowLeft, Download, MapPin, Loader2, Building2 } from 'lucide-react';
 import { Layout } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { useAuth } from '@/hooks/useAuth';
-import { useCities } from '@/hooks/useRestaurants';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import RestaurantMap from '@/components/maps/RestaurantMap';
@@ -16,9 +14,7 @@ import { useEffect } from 'react';
 export default function AdminImportPage() {
   const navigate = useNavigate();
   const { user, loading: authLoading, isAdmin } = useAuth();
-  const { data: cities } = useCities();
   
-  const [selectedCity, setSelectedCity] = useState<string>('');
   const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [radius, setRadius] = useState(5000);
   const [isImporting, setIsImporting] = useState(false);
@@ -26,6 +22,7 @@ export default function AdminImportPage() {
     imported: string[];
     skipped: string[];
     errors: string[];
+    citiesCreated: string[];
   } | null>(null);
 
   useEffect(() => {
@@ -34,21 +31,14 @@ export default function AdminImportPage() {
     }
   }, [user, authLoading, isAdmin, navigate]);
 
-  const handleCityChange = (cityId: string) => {
-    setSelectedCity(cityId);
-    const city = cities?.find(c => c.id === cityId);
-    if (city && city.latitude && city.longitude) {
-      setSelectedLocation({ lat: city.latitude, lng: city.longitude });
-    }
-  };
-
   const handleLocationSelect = (lat: number, lng: number) => {
     setSelectedLocation({ lat, lng });
+    setImportResult(null);
   };
 
   const handleImport = async () => {
-    if (!selectedLocation || !selectedCity) {
-      toast.error('Selecteer een stad en locatie op de kaart');
+    if (!selectedLocation) {
+      toast.error('Klik op de kaart om een locatie te selecteren');
       return;
     }
 
@@ -56,14 +46,11 @@ export default function AdminImportPage() {
     setImportResult(null);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      
       const response = await supabase.functions.invoke('import-google-places', {
         body: {
           latitude: selectedLocation.lat,
           longitude: selectedLocation.lng,
           radius,
-          cityId: selectedCity,
         },
       });
 
@@ -74,19 +61,22 @@ export default function AdminImportPage() {
       const result = response.data;
       setImportResult(result.details);
       
-      toast.success(`${result.imported} restaurants geïmporteerd!`);
+      if (result.citiesCreated > 0) {
+        toast.success(`${result.imported} restaurants geïmporteerd in ${result.citiesCreated} nieuwe steden!`);
+      } else {
+        toast.success(`${result.imported} restaurants geïmporteerd!`);
+      }
       
-    } catch (error) {
+    } catch (error: unknown) {
       console.error('Import error:', error);
-      toast.error(error.message || 'Er ging iets mis bij het importeren');
+      const errorMsg = error instanceof Error ? error.message : 'Er ging iets mis bij het importeren';
+      toast.error(errorMsg);
     } finally {
       setIsImporting(false);
     }
   };
 
   if (authLoading || !user || !isAdmin()) return null;
-
-  const selectedCityData = cities?.find(c => c.id === selectedCity);
 
   return (
     <Layout title="Restaurants Importeren">
@@ -99,7 +89,7 @@ export default function AdminImportPage() {
           <div>
             <h1 className="font-display text-3xl font-bold">Restaurants Importeren</h1>
             <p className="text-muted-foreground">
-              Importeer restaurants via Google Places API
+              Klik op de kaart om restaurants te importeren. Steden worden automatisch aangemaakt.
             </p>
           </div>
         </div>
@@ -115,16 +105,14 @@ export default function AdminImportPage() {
                   Selecteer Locatie
                 </CardTitle>
                 <CardDescription>
-                  Klik op de kaart om een locatie te selecteren. Restaurants binnen de straal worden geïmporteerd.
+                  Klik ergens op de kaart. Restaurants in de omgeving worden geïmporteerd, 
+                  en de bijbehorende stad/gemeente wordt automatisch aangemaakt als deze nog niet bestaat.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <RestaurantMap
-                  center={selectedCityData 
-                    ? [selectedCityData.longitude!, selectedCityData.latitude!]
-                    : [5.4697, 52.1326]
-                  }
-                  zoom={selectedCityData ? 13 : 7}
+                  center={[5.4697, 52.1326]} // Center of Netherlands
+                  zoom={8}
                   interactive
                   onLocationSelect={handleLocationSelect}
                   selectedLocation={selectedLocation}
@@ -137,24 +125,11 @@ export default function AdminImportPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Import Instellingen</CardTitle>
+                  <CardDescription>
+                    De stad en provincie worden automatisch bepaald op basis van de Google Places data.
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Stad</label>
-                    <Select value={selectedCity} onValueChange={handleCityChange}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecteer een stad" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {cities?.map((city) => (
-                          <SelectItem key={city.id} value={city.id}>
-                            {city.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
                   <div className="space-y-2">
                     <label className="text-sm font-medium">
                       Zoekstraal: {(radius / 1000).toFixed(1)} km
@@ -166,12 +141,18 @@ export default function AdminImportPage() {
                       max={10000}
                       step={500}
                     />
+                    <p className="text-xs text-muted-foreground">
+                      Alle restaurants binnen deze straal worden geïmporteerd
+                    </p>
                   </div>
 
                   {selectedLocation && (
-                    <div className="rounded-lg bg-muted p-3 text-sm">
-                      <p className="font-medium">Geselecteerde locatie:</p>
-                      <p className="text-muted-foreground">
+                    <div className="rounded-lg bg-muted p-4 space-y-2">
+                      <div className="flex items-center gap-2 text-sm font-medium">
+                        <MapPin className="h-4 w-4 text-primary" />
+                        Geselecteerde locatie
+                      </div>
+                      <p className="text-sm text-muted-foreground font-mono">
                         {selectedLocation.lat.toFixed(6)}, {selectedLocation.lng.toFixed(6)}
                       </p>
                     </div>
@@ -179,17 +160,18 @@ export default function AdminImportPage() {
 
                   <Button 
                     onClick={handleImport} 
-                    disabled={!selectedCity || !selectedLocation || isImporting}
+                    disabled={!selectedLocation || isImporting}
                     className="w-full"
+                    size="lg"
                   >
                     {isImporting ? (
                       <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                         Importeren...
                       </>
                     ) : (
                       <>
-                        <Download className="mr-2 h-4 w-4" />
+                        <Download className="mr-2 h-5 w-5" />
                         Importeer Restaurants
                       </>
                     )}
@@ -203,6 +185,20 @@ export default function AdminImportPage() {
                     <CardTitle>Import Resultaat</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    {importResult.citiesCreated.length > 0 && (
+                      <div>
+                        <p className="font-medium text-blue-600 mb-2 flex items-center gap-2">
+                          <Building2 className="h-4 w-4" />
+                          Nieuwe steden ({importResult.citiesCreated.length})
+                        </p>
+                        <ul className="text-sm text-muted-foreground space-y-1 max-h-24 overflow-y-auto">
+                          {importResult.citiesCreated.map((name, i) => (
+                            <li key={i}>+ {name}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
                     {importResult.imported.length > 0 && (
                       <div>
                         <p className="font-medium text-green-600 mb-2">
@@ -221,7 +217,7 @@ export default function AdminImportPage() {
                         <p className="font-medium text-amber-600 mb-2">
                           ⊘ Overgeslagen ({importResult.skipped.length})
                         </p>
-                        <ul className="text-sm text-muted-foreground space-y-1 max-h-32 overflow-y-auto">
+                        <ul className="text-sm text-muted-foreground space-y-1 max-h-24 overflow-y-auto">
                           {importResult.skipped.map((name, i) => (
                             <li key={i}>{name}</li>
                           ))}
@@ -234,7 +230,7 @@ export default function AdminImportPage() {
                         <p className="font-medium text-destructive mb-2">
                           ✕ Fouten ({importResult.errors.length})
                         </p>
-                        <ul className="text-sm text-muted-foreground space-y-1 max-h-32 overflow-y-auto">
+                        <ul className="text-sm text-muted-foreground space-y-1 max-h-24 overflow-y-auto">
                           {importResult.errors.map((error, i) => (
                             <li key={i}>{error}</li>
                           ))}
