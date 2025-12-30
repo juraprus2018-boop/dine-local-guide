@@ -87,20 +87,24 @@ export function useAuth() {
       },
     });
 
-    // Send welcome email if signup was successful
+    // Send custom verification email if signup was successful
     if (!error && data.user) {
       try {
+        // Get the confirmation URL from Supabase
+        const confirmationUrl = `${import.meta.env.VITE_SUPABASE_URL}/auth/v1/verify?token=${data.session?.access_token || ''}&type=signup&redirect_to=${encodeURIComponent(redirectUrl)}`;
+        
         await supabase.functions.invoke('send-email', {
           body: {
-            type: 'welcome',
+            type: 'verification',
             data: {
               email: email,
               displayName: displayName || '',
+              confirmationUrl: confirmationUrl,
             },
           },
         });
       } catch (emailError) {
-        console.error('Failed to send welcome email:', emailError);
+        console.error('Failed to send verification email:', emailError);
         // Don't fail the signup if email fails
       }
     }

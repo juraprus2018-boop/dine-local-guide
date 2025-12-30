@@ -52,49 +52,60 @@ serve(async (req) => {
     console.log(`Processing email type: ${type}`);
 
     switch (type) {
-      case 'welcome': {
-        // Welcome email to new user
-        const { email, displayName } = data;
+      case 'verification': {
+        // Email verification link
+        const { email, displayName, confirmationUrl } = data;
         
         await sendEmail({
           to: email,
-          subject: "Welkom bij Happio! 🎉",
+          subject: "Bevestig je Happio account",
           html: `
             <!DOCTYPE html>
             <html>
             <head>
               <meta charset="utf-8">
               <style>
-                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
+                body { font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f5f5f5; }
                 .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-                .header { background: linear-gradient(135deg, #f97316, #ea580c); padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-                .header h1 { color: white; margin: 0; font-size: 28px; }
-                .content { background: #fff; padding: 30px; border: 1px solid #eee; }
-                .footer { background: #f8f8f8; padding: 20px; text-align: center; font-size: 12px; color: #666; border-radius: 0 0 10px 10px; }
-                .button { display: inline-block; background: #f97316; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
+                .card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+                .header { background: #E86A5C; padding: 40px 30px; text-align: center; }
+                .header img { height: 50px; margin-bottom: 15px; }
+                .header h1 { color: white; margin: 0; font-size: 24px; font-weight: 700; }
+                .content { padding: 40px 30px; }
+                .content h2 { font-size: 22px; margin: 0 0 20px 0; color: #333; }
+                .button { display: inline-block; background: #E86A5C; color: white !important; padding: 16px 40px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; margin: 25px 0; }
+                .button:hover { background: #d55a4c; }
+                .note { background: #fff8f7; border: 1px solid #fde2df; padding: 15px; border-radius: 8px; margin: 20px 0; font-size: 14px; color: #666; }
+                .footer { background: #f8f8f8; padding: 25px 30px; text-align: center; font-size: 12px; color: #999; }
+                .link-text { color: #E86A5C; word-break: break-all; font-size: 12px; }
               </style>
             </head>
             <body>
               <div class="container">
-                <div class="header">
-                  <h1>Welkom bij Happio!</h1>
-                </div>
-                <div class="content">
-                  <p>Hallo ${displayName || 'daar'}! 👋</p>
-                  <p>Bedankt voor je registratie bij Happio. We zijn blij dat je er bent!</p>
-                  <p>Met Happio kun je:</p>
-                  <ul>
-                    <li>De beste restaurants in jouw buurt ontdekken</li>
-                    <li>Reviews lezen en schrijven</li>
-                    <li>Je favoriete restaurants opslaan</li>
-                    <li>Menu's en openingstijden bekijken</li>
-                  </ul>
-                  <p>Begin nu met het verkennen van restaurants!</p>
-                  <a href="https://happio.nl" class="button">Ontdek Restaurants</a>
-                </div>
-                <div class="footer">
-                  <p>© ${new Date().getFullYear()} Happio. Alle rechten voorbehouden.</p>
-                  <p>Je ontvangt deze email omdat je een account hebt aangemaakt bij Happio.</p>
+                <div class="card">
+                  <div class="header">
+                    <h1>😊 Happio</h1>
+                  </div>
+                  <div class="content">
+                    <h2>Hallo ${displayName || 'daar'}! 👋</h2>
+                    <p>Bedankt voor je registratie bij Happio! Klik op de knop hieronder om je emailadres te bevestigen en je account te activeren.</p>
+                    
+                    <div style="text-align: center;">
+                      <a href="${confirmationUrl}" class="button">✉️ Bevestig mijn email</a>
+                    </div>
+                    
+                    <div class="note">
+                      <strong>Werkt de knop niet?</strong><br>
+                      Kopieer en plak deze link in je browser:<br>
+                      <span class="link-text">${confirmationUrl}</span>
+                    </div>
+                    
+                    <p style="color: #666; font-size: 14px;">Deze link is 24 uur geldig. Als je geen account hebt aangemaakt, kun je deze email negeren.</p>
+                  </div>
+                  <div class="footer">
+                    <p>© ${new Date().getFullYear()} Happio. Alle rechten voorbehouden.</p>
+                    <p>Ontdek de beste restaurants in Nederland</p>
+                  </div>
                 </div>
               </div>
             </body>
@@ -131,6 +142,81 @@ serve(async (req) => {
                     <p><strong>Email:</strong> ${email}</p>
                     <p><strong>Naam:</strong> ${displayName || 'Niet opgegeven'}</p>
                     <p><strong>Datum:</strong> ${new Date().toLocaleString('nl-NL', { timeZone: 'Europe/Amsterdam' })}</p>
+                  </div>
+                </div>
+              </div>
+            </body>
+            </html>
+          `,
+        });
+        break;
+      }
+
+      case 'welcome': {
+        // Welcome email to new user (after verification)
+        const { email, displayName } = data;
+        
+        await sendEmail({
+          to: email,
+          subject: "Welkom bij Happio! 🎉",
+          html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="utf-8">
+              <style>
+                body { font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f5f5f5; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+                .header { background: #E86A5C; padding: 40px 30px; text-align: center; }
+                .header h1 { color: white; margin: 0; font-size: 28px; font-weight: 700; }
+                .content { padding: 40px 30px; }
+                .button { display: inline-block; background: #E86A5C; color: white !important; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0; }
+                .feature { display: flex; align-items: flex-start; margin: 15px 0; }
+                .feature-icon { font-size: 24px; margin-right: 15px; }
+                .footer { background: #f8f8f8; padding: 25px 30px; text-align: center; font-size: 12px; color: #999; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="card">
+                  <div class="header">
+                    <h1>Welkom bij Happio! 🎉</h1>
+                  </div>
+                  <div class="content">
+                    <p style="font-size: 18px;">Hallo ${displayName || 'daar'}! 👋</p>
+                    <p>Je account is nu actief. Dit kun je doen met Happio:</p>
+                    
+                    <div class="feature">
+                      <span class="feature-icon">🍽️</span>
+                      <div>
+                        <strong>Ontdek restaurants</strong><br>
+                        <span style="color: #666;">Vind de beste eetplekken in jouw buurt</span>
+                      </div>
+                    </div>
+                    
+                    <div class="feature">
+                      <span class="feature-icon">⭐</span>
+                      <div>
+                        <strong>Lees & schrijf reviews</strong><br>
+                        <span style="color: #666;">Deel je ervaringen met anderen</span>
+                      </div>
+                    </div>
+                    
+                    <div class="feature">
+                      <span class="feature-icon">❤️</span>
+                      <div>
+                        <strong>Bewaar favorieten</strong><br>
+                        <span style="color: #666;">Sla je favoriete restaurants op</span>
+                      </div>
+                    </div>
+                    
+                    <div style="text-align: center;">
+                      <a href="https://happio.nl" class="button">Begin met ontdekken →</a>
+                    </div>
+                  </div>
+                  <div class="footer">
+                    <p>© ${new Date().getFullYear()} Happio. Alle rechten voorbehouden.</p>
                   </div>
                 </div>
               </div>
