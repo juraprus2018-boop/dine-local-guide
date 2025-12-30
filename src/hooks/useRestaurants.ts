@@ -189,14 +189,39 @@ export function useAddReview() {
       user_id?: string;
       guest_name?: string;
       guest_email?: string;
+      restaurant_name?: string;
+      city_name?: string;
     }) => {
+      const { restaurant_name, city_name, ...reviewData } = review;
+      
       const { data, error } = await supabase
         .from('reviews')
-        .insert(review)
+        .insert(reviewData)
         .select()
         .single();
 
       if (error) throw error;
+
+      // Send review notification emails
+      try {
+        await supabase.functions.invoke('send-email', {
+          body: {
+            type: 'review',
+            data: {
+              reviewerEmail: review.guest_email,
+              reviewerName: review.guest_name,
+              restaurantName: restaurant_name || 'Restaurant',
+              cityName: city_name,
+              rating: review.rating,
+              content: review.content,
+            },
+          },
+        });
+      } catch (emailError) {
+        console.error('Failed to send review notification email:', emailError);
+        // Don't fail the review if email fails
+      }
+
       return data;
     },
     onSuccess: (data) => {

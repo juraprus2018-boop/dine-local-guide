@@ -87,6 +87,24 @@ export function useAuth() {
       },
     });
 
+    // Send welcome email if signup was successful
+    if (!error && data.user) {
+      try {
+        await supabase.functions.invoke('send-email', {
+          body: {
+            type: 'welcome',
+            data: {
+              email: email,
+              displayName: displayName || '',
+            },
+          },
+        });
+      } catch (emailError) {
+        console.error('Failed to send welcome email:', emailError);
+        // Don't fail the signup if email fails
+      }
+    }
+
     return { data, error };
   };
 

@@ -157,6 +157,8 @@ export default function RestaurantPage() {
         user_id: user?.id,
         guest_name: !user ? guestName : undefined,
         guest_email: !user ? guestEmail : undefined,
+        restaurant_name: restaurant.name,
+        city_name: restaurant.city?.name,
       });
       
       toast({ title: 'Review geplaatst!' });
