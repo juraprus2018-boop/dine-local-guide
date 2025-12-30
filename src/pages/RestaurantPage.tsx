@@ -18,6 +18,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useRestaurant, useReviews, useAddReview, useToggleFavorite, useIsFavorite } from '@/hooks/useRestaurants';
 import { cn } from '@/lib/utils';
+import { PhotoUpload } from '@/components/restaurants/PhotoUpload';
+import { ClaimButton } from '@/components/restaurants/ClaimButton';
 import type { OpeningHours, DayHours } from '@/types/database';
 
 const dayNames: Record<string, string> = {
@@ -295,6 +297,16 @@ export default function RestaurantPage() {
                     {restaurant.description}
                   </p>
                 )}
+
+                {/* Actions */}
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <PhotoUpload restaurantId={restaurant.id} />
+                  <ClaimButton 
+                    restaurantId={restaurant.id} 
+                    restaurantName={restaurant.name}
+                    isClaimed={restaurant.is_claimed || false}
+                  />
+                </div>
               </div>
 
               <Separator />

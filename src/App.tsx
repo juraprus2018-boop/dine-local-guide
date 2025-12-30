@@ -14,6 +14,9 @@ import ProfilePage from "./pages/ProfilePage";
 import DiscoverPage from "./pages/DiscoverPage";
 import CuisinesPage from "./pages/CuisinesPage";
 import AdminPage from "./pages/admin/AdminPage";
+import AdminRestaurantsPage from "./pages/admin/AdminRestaurantsPage";
+import AdminImportPage from "./pages/admin/AdminImportPage";
+import AdminClaimsPage from "./pages/admin/AdminClaimsPage";
 
 const queryClient = new QueryClient();
 
@@ -32,7 +35,10 @@ const App = () => (
             <Route path="/keukens/:cuisineSlug" element={<CuisinesPage />} />
             <Route path="/favorieten" element={<FavoritesPage />} />
             <Route path="/profiel" element={<ProfilePage />} />
-            <Route path="/admin/*" element={<AdminPage />} />
+            <Route path="/admin" element={<AdminPage />} />
+            <Route path="/admin/restaurants" element={<AdminRestaurantsPage />} />
+            <Route path="/admin/import" element={<AdminImportPage />} />
+            <Route path="/admin/claims" element={<AdminClaimsPage />} />
             <Route path="/:citySlug" element={<CityPage />} />
             <Route path="/:citySlug/:restaurantSlug" element={<RestaurantPage />} />
             <Route path="*" element={<NotFound />} />
