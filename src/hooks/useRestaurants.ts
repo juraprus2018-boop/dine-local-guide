@@ -161,10 +161,7 @@ export function useReviews(restaurantId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('reviews')
-        .select(`
-          *,
-          profile:profiles(*)
-        `)
+        .select('*')
         .eq('restaurant_id', restaurantId)
         .eq('is_approved', true)
         .order('created_at', { ascending: false });
@@ -174,6 +171,58 @@ export function useReviews(restaurantId: string) {
     },
     enabled: !!restaurantId,
   });
+}
+
+// Fetch nearby restaurants based on coordinates
+export function useNearbyRestaurants(latitude: number | null, longitude: number | null, limit = 10) {
+  return useQuery({
+    queryKey: ['nearbyRestaurants', latitude, longitude, limit],
+    queryFn: async () => {
+      if (!latitude || !longitude) return [];
+
+      // Fetch all restaurants with city info
+      const { data, error } = await supabase
+        .from('restaurants')
+        .select(`
+          *,
+          city:cities(*),
+          cuisines:restaurant_cuisines(cuisine:cuisine_types(*))
+        `)
+        .not('latitude', 'is', null)
+        .not('longitude', 'is', null);
+
+      if (error) throw error;
+
+      // Calculate distance and sort
+      const restaurantsWithDistance = (data || []).map((r: any) => {
+        const distance = calculateDistance(latitude, longitude, r.latitude, r.longitude);
+        return {
+          ...r,
+          cuisines: r.cuisines?.map((c: any) => c.cuisine) || [],
+          distance,
+        };
+      });
+
+      // Sort by distance and limit
+      return restaurantsWithDistance
+        .sort((a, b) => a.distance - b.distance)
+        .slice(0, limit);
+    },
+    enabled: !!latitude && !!longitude,
+  });
+}
+
+// Haversine formula to calculate distance between two points
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371; // Earth's radius in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
 }
 
 // Add review mutation

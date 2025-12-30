@@ -14,6 +14,7 @@ import ProfilePage from "./pages/ProfilePage";
 import DiscoverPage from "./pages/DiscoverPage";
 import CuisinesPage from "./pages/CuisinesPage";
 import ProvincesPage from "./pages/ProvincesPage";
+import NearbyPage from "./pages/NearbyPage";
 import AdminPage from "./pages/admin/AdminPage";
 import AdminRestaurantsPage from "./pages/admin/AdminRestaurantsPage";
 import AdminRestaurantEditPage from "./pages/admin/AdminRestaurantEditPage";
@@ -36,6 +37,7 @@ const App = () => (
             <Route path="/keukens" element={<CuisinesPage />} />
             <Route path="/keukens/:cuisineSlug" element={<CuisinesPage />} />
             <Route path="/provincies" element={<ProvincesPage />} />
+            <Route path="/in-de-buurt" element={<NearbyPage />} />
             <Route path="/favorieten" element={<FavoritesPage />} />
             <Route path="/profiel" element={<ProfilePage />} />
             <Route path="/admin" element={<AdminPage />} />
