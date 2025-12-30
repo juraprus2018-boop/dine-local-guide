@@ -190,22 +190,22 @@ export default function RestaurantPage() {
         </div>
       </div>
 
-      {/* Photo Gallery */}
-      <section className="relative bg-muted">
-        <div className="relative aspect-[21/9] max-h-[400px] overflow-hidden">
+      {/* Photo Gallery - Full Width */}
+      <section className="relative bg-muted w-full">
+        <div className="relative aspect-[21/9] max-h-[450px] w-full overflow-hidden">
           <img
             src={photos[currentPhotoIndex]?.url}
-            alt={restaurant.name}
+            alt={photos[currentPhotoIndex]?.caption || `${restaurant.name} foto`}
             className="h-full w-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
           
           {photos.length > 1 && (
             <>
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white"
+                className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white shadow-lg"
                 onClick={() => setCurrentPhotoIndex(i => i === 0 ? photos.length - 1 : i - 1)}
               >
                 <ChevronLeft className="h-5 w-5" />
@@ -213,22 +213,25 @@ export default function RestaurantPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white"
+                className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white shadow-lg"
                 onClick={() => setCurrentPhotoIndex(i => i === photos.length - 1 ? 0 : i + 1)}
               >
                 <ChevronRight className="h-5 w-5" />
               </Button>
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5">
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
                 {photos.map((_, i) => (
                   <button
                     key={i}
                     className={cn(
-                      'h-2 w-2 rounded-full transition-colors',
-                      i === currentPhotoIndex ? 'bg-white' : 'bg-white/50'
+                      'h-2.5 w-2.5 rounded-full transition-all shadow-sm',
+                      i === currentPhotoIndex ? 'bg-white scale-110' : 'bg-white/60 hover:bg-white/80'
                     )}
                     onClick={() => setCurrentPhotoIndex(i)}
                   />
                 ))}
+              </div>
+              <div className="absolute bottom-6 right-6 bg-black/60 text-white text-sm px-3 py-1 rounded-full">
+                {currentPhotoIndex + 1} / {photos.length}
               </div>
             </>
           )}

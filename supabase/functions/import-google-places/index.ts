@@ -549,6 +549,32 @@ serve(async (req) => {
           console.log(`Linked ${matchedCuisineIds.length} cuisines to ${details.name}`);
         }
 
+        // Import Google reviews
+        if (details.reviews && details.reviews.length > 0 && restaurant) {
+          let reviewsImported = 0;
+          for (const googleReview of details.reviews) {
+            // Skip reviews without text
+            if (!googleReview.text || googleReview.text.trim().length === 0) continue;
+            
+            const { error: reviewError } = await supabase
+              .from('reviews')
+              .insert({
+                restaurant_id: restaurant.id,
+                rating: googleReview.rating,
+                content: googleReview.text,
+                guest_name: googleReview.author_name || 'Google Gebruiker',
+                is_approved: true,
+                is_verified: false,
+                created_at: new Date(googleReview.time * 1000).toISOString(),
+              });
+            
+            if (!reviewError) {
+              reviewsImported++;
+            }
+          }
+          console.log(`Imported ${reviewsImported} Google reviews for ${details.name}`);
+        }
+
         imported.push(`${details.name} (${cityInfo.name}) - ${uploadedPhotos.length} foto's`);
         console.log(`Imported: ${details.name} in ${cityInfo.name} with ${uploadedPhotos.length} photos`);
 
