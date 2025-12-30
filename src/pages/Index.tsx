@@ -26,10 +26,8 @@ export default function Index() {
       <section className="relative overflow-hidden bg-gradient-to-b from-secondary/50 to-background pb-16 pt-12 md:pb-24 md:pt-20">
         <div className="container-wide">
           <div className="mx-auto max-w-3xl text-center">
-            <h1 className="font-display text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl animate-fade-in">
-              Ontdek de{' '}
-              <span className="text-gradient">beste restaurants</span>{' '}
-              in Nederland
+            <h1 className="animate-fade-in">
+              Ontdek de beste restaurants in Nederland
             </h1>
             <p className="mt-6 text-lg text-muted-foreground animate-slide-up stagger-1">
               Van gezellige eetcafés tot sterrenrestaurants. Vind jouw perfecte eetplek, 
