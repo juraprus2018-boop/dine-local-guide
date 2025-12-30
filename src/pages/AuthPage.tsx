@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { Mail, Lock, User, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, ArrowLeft, CheckCircle, Inbox } from 'lucide-react';
 import { Layout } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import happioLogo from '@/assets/happio-logo.png';
 
 export default function AuthPage() {
   const [searchParams] = useSearchParams();
@@ -19,6 +20,8 @@ export default function AuthPage() {
   const [activeTab, setActiveTab] = useState(searchParams.get('mode') === 'signup' ? 'signup' : 'login');
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showVerificationMessage, setShowVerificationMessage] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
 
   // Login form
   const [loginEmail, setLoginEmail] = useState('');
@@ -45,6 +48,8 @@ export default function AuthPage() {
       if (error) {
         if (error.message.includes('Invalid login credentials')) {
           toast({ title: 'Ongeldige inloggegevens', description: 'Controleer je email en wachtwoord.', variant: 'destructive' });
+        } else if (error.message.includes('Email not confirmed')) {
+          toast({ title: 'Email niet bevestigd', description: 'Controleer je inbox en klik op de verificatielink.', variant: 'destructive' });
         } else {
           toast({ title: 'Inloggen mislukt', description: error.message, variant: 'destructive' });
         }
@@ -79,11 +84,8 @@ export default function AuthPage() {
           toast({ title: 'Registratie mislukt', description: error.message, variant: 'destructive' });
         }
       } else {
-        toast({ 
-          title: 'Account aangemaakt!', 
-          description: 'Controleer je email om je account te bevestigen.',
-        });
-        setActiveTab('login');
+        setRegisteredEmail(signupEmail);
+        setShowVerificationMessage(true);
       }
     } catch (error) {
       toast({ title: 'Er ging iets mis', variant: 'destructive' });
@@ -91,6 +93,79 @@ export default function AuthPage() {
       setIsSubmitting(false);
     }
   };
+
+  // Show verification success screen
+  if (showVerificationMessage) {
+    return (
+      <Layout title="Bevestig je email" noFooter>
+        <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center bg-gradient-to-b from-secondary/50 to-background p-4">
+          <div className="w-full max-w-lg text-center">
+            <Card className="shadow-xl">
+              <CardContent className="pt-10 pb-10">
+                <div className="mb-6 flex justify-center">
+                  <div className="rounded-full bg-primary/10 p-6">
+                    <Inbox className="h-16 w-16 text-primary" />
+                  </div>
+                </div>
+                
+                <h1 className="text-2xl font-bold mb-4">Controleer je inbox!</h1>
+                
+                <p className="text-muted-foreground mb-6">
+                  We hebben een verificatie-email gestuurd naar:
+                </p>
+                
+                <p className="font-semibold text-lg mb-6 bg-secondary px-4 py-3 rounded-lg inline-block">
+                  {registeredEmail}
+                </p>
+                
+                <div className="bg-primary/5 border border-primary/20 rounded-lg p-6 mb-6 text-left">
+                  <h3 className="font-semibold mb-3 flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5 text-primary" />
+                    Volgende stappen:
+                  </h3>
+                  <ol className="space-y-2 text-sm text-muted-foreground">
+                    <li className="flex gap-2">
+                      <span className="font-bold text-primary">1.</span>
+                      Open je email inbox
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="font-bold text-primary">2.</span>
+                      Zoek naar een email van Happio
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="font-bold text-primary">3.</span>
+                      Klik op de verificatielink in de email
+                    </li>
+                    <li className="flex gap-2">
+                      <span className="font-bold text-primary">4.</span>
+                      Daarna kun je inloggen!
+                    </li>
+                  </ol>
+                </div>
+
+                <div className="bg-warning/10 border border-warning/30 rounded-lg p-4 mb-6 text-left">
+                  <p className="text-sm text-warning-foreground">
+                    <strong>💡 Tip:</strong> Geen email ontvangen? Controleer ook je spam/ongewenste mail folder!
+                  </p>
+                </div>
+                
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowVerificationMessage(false);
+                    setActiveTab('login');
+                  }}
+                  className="w-full"
+                >
+                  Terug naar inloggen
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   if (loading) {
     return (
@@ -116,11 +191,8 @@ export default function AuthPage() {
 
           <Card className="shadow-xl">
             <CardHeader className="text-center">
-              <Link to="/" className="inline-flex items-center justify-center gap-2 mb-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground font-display font-bold text-xl">
-                  H
-                </div>
-                <span className="font-display text-2xl font-semibold">Happio</span>
+              <Link to="/" className="inline-block mb-4">
+                <img src={happioLogo} alt="Happio" className="h-12 mx-auto" />
               </Link>
               <CardTitle>
                 {activeTab === 'login' ? 'Welkom terug' : 'Account aanmaken'}
