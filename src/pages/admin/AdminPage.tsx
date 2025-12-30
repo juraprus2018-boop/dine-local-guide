@@ -1,13 +1,36 @@
 import { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { LayoutDashboard, MapPin, Utensils, Users, Star, FileCheck } from 'lucide-react';
+import { LayoutDashboard, MapPin, Utensils, Users, Star, FileCheck, Download } from 'lucide-react';
 import { Layout } from '@/components/layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function AdminPage() {
   const navigate = useNavigate();
   const { user, loading, isAdmin } = useAuth();
+
+  // Fetch actual stats
+  const { data: stats } = useQuery({
+    queryKey: ['admin-stats'],
+    queryFn: async () => {
+      const [restaurants, cities, reviews, claims] = await Promise.all([
+        supabase.from('restaurants').select('id', { count: 'exact', head: true }),
+        supabase.from('cities').select('id', { count: 'exact', head: true }),
+        supabase.from('reviews').select('id', { count: 'exact', head: true }),
+        supabase.from('restaurant_claims').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+      ]);
+      return {
+        restaurants: restaurants.count || 0,
+        cities: cities.count || 0,
+        reviews: reviews.count || 0,
+        pendingClaims: claims.count || 0,
+      };
+    },
+    enabled: !!user && isAdmin(),
+  });
 
   useEffect(() => {
     if (!loading && (!user || !isAdmin())) {
@@ -27,12 +50,11 @@ export default function AdminPage() {
 
   if (!user || !isAdmin()) return null;
 
-  const stats = [
-    { label: 'Restaurants', value: '0', icon: Utensils, href: '/admin/restaurants' },
-    { label: 'Steden', value: '20', icon: MapPin, href: '/admin/cities' },
-    { label: 'Gebruikers', value: '0', icon: Users, href: '/admin/users' },
-    { label: 'Reviews', value: '0', icon: Star, href: '/admin/reviews' },
-    { label: 'Claims', value: '0', icon: FileCheck, href: '/admin/claims' },
+  const statCards = [
+    { label: 'Restaurants', value: stats?.restaurants ?? 0, icon: Utensils, href: '/admin/restaurants' },
+    { label: 'Steden', value: stats?.cities ?? 0, icon: MapPin, href: '/admin/restaurants' },
+    { label: 'Reviews', value: stats?.reviews ?? 0, icon: Star, href: '/admin/restaurants' },
+    { label: 'Pending Claims', value: stats?.pendingClaims ?? 0, icon: FileCheck, href: '/admin/claims' },
   ];
 
   return (
@@ -53,35 +75,74 @@ export default function AdminPage() {
 
       <section className="py-8">
         <div className="container-wide">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-            {stats.map((stat) => (
-              <Card key={stat.label} className="hover:shadow-md transition-shadow">
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    {stat.label}
-                  </CardTitle>
-                  <stat.icon className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stat.value}</div>
-                </CardContent>
-              </Card>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {statCards.map((stat) => (
+              <Link key={stat.label} to={stat.href}>
+                <Card className="hover:shadow-md transition-shadow cursor-pointer">
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                      {stat.label}
+                    </CardTitle>
+                    <stat.icon className="h-4 w-4 text-muted-foreground" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stat.value}</div>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
 
           <Card className="mt-8">
             <CardHeader>
-              <CardTitle>Restaurant Import</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Download className="h-5 w-5" />
+                Restaurant Import
+              </CardTitle>
               <CardDescription>
-                Importeer restaurants via Google Places API. Voeg eerst een GOOGLE_PLACES_API_KEY toe aan de secrets.
+                Importeer restaurants via Google Places API. Klik op de kaart om een locatie te selecteren - 
+                steden worden automatisch aangemaakt op basis van de API data.
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">
-                De Google Places import functionaliteit vereist een API key. Ga naar Cloud settings om deze toe te voegen.
-              </p>
+              <Button asChild>
+                <Link to="/admin/import">
+                  <MapPin className="mr-2 h-4 w-4" />
+                  Open Import Tool
+                </Link>
+              </Button>
             </CardContent>
           </Card>
+
+          <div className="mt-8 grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Restaurants Beheren</CardTitle>
+                <CardDescription>
+                  Bekijk, bewerk en verwijder restaurants
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="outline" asChild>
+                  <Link to="/admin/restaurants">Naar Restaurants</Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Claims Beheren</CardTitle>
+                <CardDescription>
+                  Bekijk en behandel eigendomsclaims van restauranteigenaren
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="outline" asChild>
+                  <Link to="/admin/claims">Naar Claims</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </section>
     </Layout>
