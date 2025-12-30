@@ -172,7 +172,10 @@ async function downloadAndUploadPhoto(
   supabase: any,
   photoReference: string,
   googleApiKey: string,
+  restaurantName: string,
   restaurantSlug: string,
+  cityName: string,
+  citySlug: string,
   photoIndex: number
 ): Promise<{ url: string; alt: string } | null> {
   try {
@@ -188,11 +191,14 @@ async function downloadAndUploadPhoto(
     const arrayBuffer = await imageBlob.arrayBuffer();
     const uint8Array = new Uint8Array(arrayBuffer);
     
+    // New naming: restaurant-name-city-happio.jpg
+    const baseName = `${restaurantSlug}-${citySlug}-happio`;
     const fileName = photoIndex === 0 
-      ? `happio-${restaurantSlug}.jpg`
-      : `happio-${restaurantSlug}-${photoIndex + 1}.jpg`;
+      ? `${baseName}.jpg`
+      : `${baseName}-${photoIndex + 1}.jpg`;
     
-    const filePath = `restaurants/${fileName}`;
+    // Folder structure: city-slug/restaurant-slug/
+    const filePath = `${citySlug}/${restaurantSlug}/${fileName}`;
     
     const { error: uploadError } = await supabase.storage
       .from('restaurant-photos')
@@ -210,11 +216,14 @@ async function downloadAndUploadPhoto(
       .from('restaurant-photos')
       .getPublicUrl(filePath);
     
+    // SEO-friendly alt text with restaurant name and city
+    const altText = photoIndex === 0 
+      ? `${restaurantName} restaurant ${cityName} - Happio`
+      : `${restaurantName} ${cityName} foto ${photoIndex + 1} - Happio`;
+    
     return {
       url: publicUrl.publicUrl,
-      alt: photoIndex === 0 
-        ? `Restaurant foto van Happio ${restaurantSlug.replace(/-/g, ' ')}`
-        : `Restaurant foto ${photoIndex + 1} van Happio ${restaurantSlug.replace(/-/g, ' ')}`,
+      alt: altText,
     };
   } catch (error) {
     console.error('Photo download/upload error:', error);
@@ -409,13 +418,17 @@ serve(async (req) => {
         if (details.photos && details.photos.length > 0) {
           console.log(`Downloading ${details.photos.length} photos for ${details.name}`);
           
+          const citySlug = slugify(cityInfo.name);
           for (let i = 0; i < details.photos.length; i++) {
             const photo = details.photos[i];
             const uploadResult = await downloadAndUploadPhoto(
               supabase,
               photo.photo_reference,
               googleApiKey,
+              details.name,
               slug,
+              cityInfo.name,
+              citySlug,
               i
             );
             
