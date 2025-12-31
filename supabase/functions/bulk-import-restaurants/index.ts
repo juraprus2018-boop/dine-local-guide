@@ -504,8 +504,8 @@ serve(async (req) => {
           continue;
         }
 
-        // Get place details - 1 API call per restaurant
-        const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${place.place_id}&fields=name,formatted_address,formatted_phone_number,website,opening_hours,price_level,rating,user_ratings_total,photos,types,geometry&key=${GOOGLE_API_KEY}`;
+        // Get place details with reviews - 1 API call per restaurant
+        const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${place.place_id}&fields=name,formatted_address,formatted_phone_number,website,opening_hours,price_level,rating,user_ratings_total,photos,types,geometry,reviews&key=${GOOGLE_API_KEY}`;
         
         const detailsResponse = await fetch(detailsUrl);
         const detailsData = await detailsResponse.json();
@@ -571,6 +571,34 @@ serve(async (req) => {
         if (restaurantError) {
           console.error(`Error inserting restaurant ${details.name}:`, restaurantError);
           continue;
+        }
+
+        // Import Google reviews (max 5 per restaurant)
+        let reviewsImported = 0;
+        if (details.reviews && details.reviews.length > 0 && newRestaurant) {
+          for (const review of details.reviews.slice(0, 5)) {
+            // Skip reviews without content
+            if (!review.text || review.text.trim().length === 0) continue;
+
+            const { error: reviewError } = await supabase
+              .from('reviews')
+              .insert({
+                restaurant_id: newRestaurant.id,
+                rating: review.rating || 5,
+                content: review.text,
+                guest_name: review.author_name || 'Google Reviewer',
+                is_approved: true, // Auto-approve Google reviews
+                is_verified: true, // Mark as verified (from Google)
+                created_at: review.time ? new Date(review.time * 1000).toISOString() : new Date().toISOString(),
+              });
+
+            if (!reviewError) {
+              reviewsImported++;
+            } else {
+              console.error(`Error inserting review for ${details.name}:`, reviewError);
+            }
+          }
+          console.log(`  → ${reviewsImported} reviews imported for ${details.name}`);
         }
 
         // Link cuisines based on Google types
