@@ -161,7 +161,10 @@ export default function RestaurantPage() {
         city_name: restaurant.city?.name,
       });
       
-      toast({ title: 'Review geplaatst!' });
+      toast({ 
+        title: 'Review ontvangen! 📝',
+        description: 'Je review wordt eerst nagekeken door onze beheerders. Je ontvangt een email zodra deze online staat.',
+      });
       setReviewRating(5);
       setReviewTitle('');
       setReviewContent('');

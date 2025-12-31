@@ -321,6 +321,64 @@ serve(async (req) => {
         break;
       }
 
+      case 'review_approved': {
+        // Email to reviewer when review is approved
+        const { email, name, restaurantName, restaurantUrl, rating } = data;
+        
+        await sendEmail({
+          to: email,
+          subject: `Je review van ${restaurantName} staat nu online! 🎉`,
+          html: `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta charset="utf-8">
+              <style>
+                body { font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f5f5f5; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .card { background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+                .header { background: #22c55e; padding: 40px 30px; text-align: center; }
+                .header h1 { color: white; margin: 0; font-size: 24px; font-weight: 700; }
+                .content { padding: 40px 30px; }
+                .button { display: inline-block; background: #E86A5C; color: white !important; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0; }
+                .review-box { background: #f0fdf4; border: 1px solid #86efac; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; }
+                .stars { color: #f59e0b; font-size: 24px; }
+                .footer { background: #f8f8f8; padding: 25px 30px; text-align: center; font-size: 12px; color: #999; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="card">
+                  <div class="header">
+                    <h1>✅ Je review is goedgekeurd!</h1>
+                  </div>
+                  <div class="content">
+                    <p style="font-size: 18px;">Hallo ${name || 'daar'}! 👋</p>
+                    <p>Goed nieuws! Je review voor <strong>${restaurantName}</strong> is goedgekeurd en staat nu online.</p>
+                    
+                    <div class="review-box">
+                      <p style="margin: 0 0 10px 0; font-weight: 600;">Je beoordeling:</p>
+                      <p class="stars">${'★'.repeat(rating)}${'☆'.repeat(5 - rating)}</p>
+                    </div>
+                    
+                    <p>Bedankt voor je bijdrage! Je helpt anderen bij het vinden van de beste restaurants.</p>
+                    
+                    <div style="text-align: center;">
+                      <a href="${restaurantUrl}" class="button">Bekijk je review →</a>
+                    </div>
+                  </div>
+                  <div class="footer">
+                    <p>© ${new Date().getFullYear()} Happio. Alle rechten voorbehouden.</p>
+                  </div>
+                </div>
+              </div>
+            </body>
+            </html>
+          `,
+        });
+        break;
+      }
+
       default:
         throw new Error(`Unknown email type: ${type}`);
     }

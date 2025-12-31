@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { LayoutDashboard, MapPin, Utensils, Users, Star, FileCheck, Download } from 'lucide-react';
+import { LayoutDashboard, MapPin, Utensils, Users, Star, FileCheck, Download, MessageSquare } from 'lucide-react';
 import { Layout } from '@/components/layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,17 +16,19 @@ export default function AdminPage() {
   const { data: stats } = useQuery({
     queryKey: ['admin-stats'],
     queryFn: async () => {
-      const [restaurants, cities, reviews, claims] = await Promise.all([
+      const [restaurants, cities, reviews, claims, pendingReviews] = await Promise.all([
         supabase.from('restaurants').select('id', { count: 'exact', head: true }),
         supabase.from('cities').select('id', { count: 'exact', head: true }),
         supabase.from('reviews').select('id', { count: 'exact', head: true }),
         supabase.from('restaurant_claims').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+        supabase.from('reviews').select('id', { count: 'exact', head: true }).eq('is_approved', false),
       ]);
       return {
         restaurants: restaurants.count || 0,
         cities: cities.count || 0,
         reviews: reviews.count || 0,
         pendingClaims: claims.count || 0,
+        pendingReviews: pendingReviews.count || 0,
       };
     },
     enabled: !!user && isAdmin(),
@@ -53,7 +55,8 @@ export default function AdminPage() {
   const statCards = [
     { label: 'Restaurants', value: stats?.restaurants ?? 0, icon: Utensils, href: '/admin/restaurants' },
     { label: 'Steden', value: stats?.cities ?? 0, icon: MapPin, href: '/admin/restaurants' },
-    { label: 'Reviews', value: stats?.reviews ?? 0, icon: Star, href: '/admin/restaurants' },
+    { label: 'Reviews', value: stats?.reviews ?? 0, icon: Star, href: '/admin/reviews' },
+    { label: 'Pending Reviews', value: stats?.pendingReviews ?? 0, icon: MessageSquare, href: '/admin/reviews' },
     { label: 'Pending Claims', value: stats?.pendingClaims ?? 0, icon: FileCheck, href: '/admin/claims' },
   ];
 
@@ -139,6 +142,20 @@ export default function AdminPage() {
               <CardContent>
                 <Button variant="outline" asChild>
                   <Link to="/admin/claims">Naar Claims</Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Reviews Beheren</CardTitle>
+                <CardDescription>
+                  Keur reviews goed of af voordat ze online komen
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="outline" asChild>
+                  <Link to="/admin/reviews">Naar Reviews</Link>
                 </Button>
               </CardContent>
             </Card>
