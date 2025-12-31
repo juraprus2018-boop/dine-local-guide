@@ -24,6 +24,7 @@ interface ImportJob {
   started_at: string | null;
   completed_at: string | null;
   created_at: string;
+  last_city: string | null;
 }
 
 export default function AdminImportPage() {
@@ -368,6 +369,16 @@ export default function AdminImportPage() {
                       
                       {(currentJob.status === 'running' || currentJob.status === 'completed') && (
                         <>
+                          {/* Laatste stad indicator */}
+                          {currentJob.last_city && (
+                            <div className="flex items-center gap-2 p-2 rounded bg-primary/10 text-primary">
+                              <MapPin className="h-4 w-4" />
+                              <span className="text-sm font-medium">
+                                {currentJob.status === 'running' ? 'Bezig met:' : 'Laatste stad:'} {currentJob.last_city}
+                              </span>
+                            </div>
+                          )}
+
                           <div className="space-y-2">
                             <div className="flex justify-between text-sm">
                               <span>Voortgang</span>
@@ -403,11 +414,11 @@ export default function AdminImportPage() {
                           {currentJob.errors && currentJob.errors.length > 0 && (
                             <div className="text-sm">
                               <p className="font-medium text-destructive mb-1">
-                                Laatste fouten ({currentJob.errors.length}):
+                                Laatste 10 fouten ({currentJob.errors.length} totaal):
                               </p>
-                              <ul className="text-xs text-muted-foreground max-h-24 overflow-y-auto space-y-1">
-                                {currentJob.errors.slice(-5).map((error, i) => (
-                                  <li key={i} className="truncate">{error}</li>
+                              <ul className="text-xs text-muted-foreground max-h-32 overflow-y-auto space-y-1 bg-destructive/5 p-2 rounded">
+                                {currentJob.errors.slice(-10).map((error, i) => (
+                                  <li key={i} className="truncate font-mono">{error}</li>
                                 ))}
                               </ul>
                             </div>
