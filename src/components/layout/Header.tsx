@@ -1,7 +1,9 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { Menu, X, Heart, User, LogOut, Settings, MapPin, Search } from 'lucide-react';
+import { Menu, X, Heart, User, LogOut, Settings, MapPin, Search, MessageSquare } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 import happioLogo from '@/assets/happio-logo.png';
 
@@ -18,6 +21,21 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, profile, signOut, isAdmin } = useAuth();
   const navigate = useNavigate();
+
+  // Fetch pending reviews count for admins
+  const { data: pendingReviewsCount } = useQuery({
+    queryKey: ['pendingReviewsCount'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('reviews')
+        .select('id', { count: 'exact', head: true })
+        .eq('is_approved', false);
+      if (error) throw error;
+      return count || 0;
+    },
+    enabled: !!user && isAdmin(),
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
 
   const handleSignOut = async () => {
     await signOut();
@@ -124,6 +142,19 @@ export function Header() {
                           <Link to="/admin" className="cursor-pointer">
                             <Settings className="mr-2 h-4 w-4" />
                             Admin Dashboard
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link to="/admin/reviews" className="cursor-pointer flex items-center justify-between">
+                            <span className="flex items-center">
+                              <MessageSquare className="mr-2 h-4 w-4" />
+                              Reviews
+                            </span>
+                            {pendingReviewsCount && pendingReviewsCount > 0 && (
+                              <Badge variant="destructive" className="ml-2 h-5 min-w-5 px-1.5">
+                                {pendingReviewsCount}
+                              </Badge>
+                            )}
                           </Link>
                         </DropdownMenuItem>
                       </>
