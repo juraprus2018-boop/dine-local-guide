@@ -519,8 +519,8 @@ async function runBackgroundImport(supabase: any, jobId: string, GOOGLE_API_KEY:
             continue;
           }
 
-          // Get place details with reviews
-          const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${place.place_id}&fields=name,formatted_address,formatted_phone_number,website,opening_hours,price_level,rating,user_ratings_total,photos,types,geometry,reviews&key=${GOOGLE_API_KEY}`;
+          // Get place details with reviews in Dutch
+          const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${place.place_id}&fields=name,formatted_address,formatted_phone_number,website,opening_hours,price_level,rating,user_ratings_total,photos,types,geometry,reviews&language=nl&reviews_sort=newest&key=${GOOGLE_API_KEY}`;
           
           const detailsResponse = await fetch(detailsUrl);
           const detailsData = await detailsResponse.json();
