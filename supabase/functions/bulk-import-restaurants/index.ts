@@ -482,9 +482,21 @@ serve(async (req) => {
         continue;
       }
 
-      // Get top 5 restaurants by rating
+      // Excluded types (hotels, B&Bs, etc.)
+      const excludedTypes = ['lodging', 'hotel', 'bed_and_breakfast', 'guest_house', 'campground', 'rv_park', 'motel'];
+      
+      // Get top 5 restaurants by rating, excluding hotels/B&Bs
       const topRestaurants = searchData.results
-        .filter((r: any) => r.rating >= 3.5)
+        .filter((r: any) => {
+          // Must have minimum rating
+          if (r.rating < 3.5) return false;
+          // Exclude if any of the types match excluded types
+          if (r.types && r.types.some((t: string) => excludedTypes.includes(t))) {
+            console.log(`Skipping ${r.name} - is a hotel/B&B`);
+            return false;
+          }
+          return true;
+        })
         .sort((a: any, b: any) => (b.rating || 0) - (a.rating || 0))
         .slice(0, 5);
 
