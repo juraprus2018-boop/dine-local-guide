@@ -62,6 +62,12 @@ export function Header() {
             >
               Ontdek
             </Link>
+            <Link 
+              to="/reviews" 
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              Reviews
+            </Link>
           </nav>
 
           {/* Actions */}
@@ -190,6 +196,13 @@ export function Header() {
               onClick={() => setMobileMenuOpen(false)}
             >
               Keukens
+            </Link>
+            <Link
+              to="/reviews"
+              className="rounded-lg px-3 py-2 text-sm font-medium hover:bg-muted"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              Reviews
             </Link>
             {user && (
               <Link
