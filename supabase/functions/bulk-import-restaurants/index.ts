@@ -494,18 +494,33 @@ async function processCity(
     .slice(0, 5);
 
   for (const place of topRestaurants) {
-    const { data: existing, error: existingRestaurantError } = await supabase
+    // Skip if restaurant already exists by google_place_id
+    const { data: existingByPlaceId, error: existingPlaceIdError } = await supabase
       .from('restaurants')
       .select('id')
       .eq('google_place_id', place.place_id)
       .maybeSingle();
 
-    if (existingRestaurantError) {
-      errors.push(`Restaurant lookup (${place?.name || place?.place_id}): ${existingRestaurantError.message}`);
+    if (existingPlaceIdError) {
+      errors.push(`Restaurant lookup (${place?.name || place?.place_id}): ${existingPlaceIdError.message}`);
       continue;
     }
 
-    if (existing) {
+    if (existingByPlaceId) {
+      skippedRestaurants++;
+      continue;
+    }
+
+    // Also check by slug + city_id to prevent duplicate key errors
+    const tempSlug = createSlug(place.name || '');
+    const { data: existingBySlug } = await supabase
+      .from('restaurants')
+      .select('id')
+      .eq('slug', tempSlug)
+      .eq('city_id', cityId)
+      .maybeSingle();
+
+    if (existingBySlug) {
       skippedRestaurants++;
       continue;
     }
@@ -675,6 +690,40 @@ async function runBackgroundImport(supabase: any, jobId: string, GOOGLE_API_KEY:
       Date.now() - chunkStartedAt < MAX_CHUNK_MS
     ) {
       const cityData = DUTCH_CITIES[processedCities];
+      
+      // Check if city already has restaurants imported - skip if so
+      const { data: cityRecord } = await supabase
+        .from('cities')
+        .select('id')
+        .eq('slug', createSlug(cityData.name))
+        .maybeSingle();
+
+      if (cityRecord) {
+        const { count: existingCount } = await supabase
+          .from('restaurants')
+          .select('id', { count: 'exact', head: true })
+          .eq('city_id', cityRecord.id);
+
+        if (existingCount && existingCount >= 3) {
+          // City already has restaurants, skip it
+          console.log(
+            `[bulk-import] job=${jobId} city=${cityData.name} already has ${existingCount} restaurants, skipping`
+          );
+          processedCities++;
+          citiesProcessedThisChunk++;
+          
+          await supabase
+            .from('import_jobs')
+            .update({
+              processed_cities: processedCities,
+              last_city: `${cityData.name} (overgeslagen)`,
+            })
+            .eq('id', jobId);
+          
+          continue;
+        }
+      }
+
       console.log(
         `[bulk-import] job=${jobId} city=${cityData.name} (${processedCities + 1}/${DUTCH_CITIES.length})`
       );
