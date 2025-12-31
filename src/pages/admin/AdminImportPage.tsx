@@ -1,12 +1,13 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, MapPin, Loader2, Building2, Utensils, Globe, Play, RefreshCw, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { ArrowLeft, Download, MapPin, Loader2, Building2, Utensils, Globe, Play, RefreshCw, CheckCircle, XCircle, Clock, Activity, Zap } from 'lucide-react';
 import { Layout } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -27,6 +28,13 @@ interface ImportJob {
   last_city: string | null;
 }
 
+interface ActivityLogEntry {
+  id: string;
+  timestamp: Date;
+  type: 'city' | 'restaurant' | 'skip' | 'error' | 'info';
+  message: string;
+}
+
 export default function AdminImportPage() {
   const navigate = useNavigate();
   const { user, loading: authLoading, isAdmin } = useAuth();
@@ -37,12 +45,30 @@ export default function AdminImportPage() {
   const [isLinkingCuisines, setIsLinkingCuisines] = useState(false);
   const [currentJob, setCurrentJob] = useState<ImportJob | null>(null);
   const [isLoadingStatus, setIsLoadingStatus] = useState(false);
+  const [activityLog, setActivityLog] = useState<ActivityLogEntry[]>([]);
   const [importResult, setImportResult] = useState<{
     imported: string[];
     skipped: string[];
     errors: string[];
     citiesCreated: string[];
   } | null>(null);
+
+  const prevJobRef = useRef<ImportJob | null>(null);
+  const logScrollRef = useRef<HTMLDivElement>(null);
+
+  // Add to activity log
+  const addLogEntry = useCallback((type: ActivityLogEntry['type'], message: string) => {
+    setActivityLog(prev => {
+      const newEntry: ActivityLogEntry = {
+        id: `${Date.now()}-${Math.random()}`,
+        timestamp: new Date(),
+        type,
+        message,
+      };
+      // Keep last 100 entries
+      return [...prev, newEntry].slice(-100);
+    });
+  }, []);
 
   // Fetch job status
   const fetchJobStatus = useCallback(async () => {
@@ -57,23 +83,141 @@ export default function AdminImportPage() {
       }
 
       if (response.data?.job) {
-        setCurrentJob(response.data.job);
+        const newJob = response.data.job as ImportJob;
+        const prevJob = prevJobRef.current;
+
+        // Detect changes and log them
+        if (prevJob && newJob.id === prevJob.id) {
+          // New city processed
+          if (newJob.last_city && newJob.last_city !== prevJob.last_city) {
+            if (newJob.last_city.includes('overgeslagen')) {
+              addLogEntry('skip', `⏭️ ${newJob.last_city}`);
+            } else {
+              addLogEntry('city', `📍 Stad verwerkt: ${newJob.last_city}`);
+            }
+          }
+
+          // New restaurants imported
+          const newRestaurants = newJob.imported_restaurants - (prevJob.imported_restaurants || 0);
+          if (newRestaurants > 0) {
+            addLogEntry('restaurant', `🍽️ +${newRestaurants} restaurants geïmporteerd`);
+          }
+
+          // New reviews
+          const newReviews = newJob.imported_reviews - (prevJob.imported_reviews || 0);
+          if (newReviews > 0) {
+            addLogEntry('info', `⭐ +${newReviews} reviews toegevoegd`);
+          }
+
+          // New skips
+          const newSkips = newJob.skipped_restaurants - (prevJob.skipped_restaurants || 0);
+          if (newSkips > 0) {
+            addLogEntry('skip', `⊘ ${newSkips} restaurants overgeslagen (duplicaten)`);
+          }
+
+          // New errors
+          if (newJob.errors && prevJob.errors) {
+            const newErrors = newJob.errors.slice(prevJob.errors.length);
+            newErrors.forEach(err => {
+              addLogEntry('error', `❌ ${err}`);
+            });
+          }
+
+          // Status change
+          if (newJob.status !== prevJob.status) {
+            if (newJob.status === 'completed') {
+              addLogEntry('info', `✅ Import voltooid! ${newJob.imported_restaurants} restaurants, ${newJob.imported_reviews} reviews`);
+            } else if (newJob.status === 'failed') {
+              addLogEntry('error', '❌ Import mislukt');
+            }
+          }
+        } else if (!prevJob && newJob.status === 'running') {
+          addLogEntry('info', '🚀 Import gestart...');
+        }
+
+        prevJobRef.current = newJob;
+        setCurrentJob(newJob);
       }
     } catch (error) {
       console.error('Error fetching status:', error);
     }
-  }, []);
+  }, [addLogEntry]);
 
-  // Poll for status while job is running
+  // Realtime subscription for import_jobs table
+  useEffect(() => {
+    const channel = supabase
+      .channel('import-jobs-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'import_jobs',
+        },
+        (payload) => {
+          const newJob = payload.new as ImportJob;
+          const prevJob = prevJobRef.current;
+
+          // Detect changes and log them
+          if (prevJob && newJob.id === prevJob.id) {
+            if (newJob.last_city && newJob.last_city !== prevJob.last_city) {
+              if (newJob.last_city.includes('overgeslagen')) {
+                addLogEntry('skip', `⏭️ ${newJob.last_city}`);
+              } else {
+                addLogEntry('city', `📍 Stad: ${newJob.last_city}`);
+              }
+            }
+
+            const newRestaurants = newJob.imported_restaurants - (prevJob.imported_restaurants || 0);
+            if (newRestaurants > 0) {
+              addLogEntry('restaurant', `🍽️ +${newRestaurants} restaurants`);
+            }
+
+            const newReviews = newJob.imported_reviews - (prevJob.imported_reviews || 0);
+            if (newReviews > 0) {
+              addLogEntry('info', `⭐ +${newReviews} reviews`);
+            }
+
+            const newSkips = newJob.skipped_restaurants - (prevJob.skipped_restaurants || 0);
+            if (newSkips > 0) {
+              addLogEntry('skip', `⊘ ${newSkips} duplicaten geskipt`);
+            }
+
+            if (newJob.errors && prevJob.errors && newJob.errors.length > prevJob.errors.length) {
+              const newErrors = newJob.errors.slice(prevJob.errors.length);
+              newErrors.forEach(err => addLogEntry('error', `❌ ${err}`));
+            }
+
+            if (newJob.status !== prevJob.status) {
+              if (newJob.status === 'completed') {
+                addLogEntry('info', `✅ VOLTOOID! ${newJob.imported_restaurants} restaurants`);
+              } else if (newJob.status === 'failed') {
+                addLogEntry('error', '❌ Import mislukt!');
+              }
+            }
+          }
+
+          prevJobRef.current = newJob;
+          setCurrentJob(newJob);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [addLogEntry]);
+
+  // Initial fetch and polling fallback
   useEffect(() => {
     fetchJobStatus();
 
-    // Poll every 5 seconds if job is running
+    // Poll every 3 seconds as fallback (realtime is primary)
     const interval = setInterval(() => {
       if (currentJob?.status === 'running' || currentJob?.status === 'pending') {
         fetchJobStatus();
       }
-    }, 5000);
+    }, 3000);
 
     return () => clearInterval(interval);
   }, [fetchJobStatus, currentJob?.status]);
@@ -153,6 +297,7 @@ export default function AdminImportPage() {
 
   const handleStartBulkImport = async () => {
     setIsLoadingStatus(true);
+    setActivityLog([]); // Clear previous logs
 
     try {
       const response = await supabase.functions.invoke('bulk-import-restaurants', {
@@ -168,6 +313,7 @@ export default function AdminImportPage() {
         return;
       }
 
+      addLogEntry('info', '🚀 Bulk import gestart!');
       toast.success('Import gestart! Dit draait op de achtergrond.');
       
       // Refresh status
@@ -176,6 +322,7 @@ export default function AdminImportPage() {
     } catch (error: unknown) {
       console.error('Start import error:', error);
       const errorMsg = error instanceof Error ? error.message : 'Er ging iets mis';
+      addLogEntry('error', `❌ Start mislukt: ${errorMsg}`);
       toast.error(errorMsg);
     } finally {
       setIsLoadingStatus(false);
@@ -410,6 +557,43 @@ export default function AdminImportPage() {
                               <div className="text-xs">Duur</div>
                             </div>
                           </div>
+
+                          {/* Live Activity Log */}
+                          {activityLog.length > 0 && (
+                            <div className="text-sm">
+                              <div className="flex items-center gap-2 font-medium text-primary mb-2">
+                                <Activity className="h-4 w-4" />
+                                Live Activiteit
+                                {currentJob.status === 'running' && (
+                                  <span className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                                  </span>
+                                )}
+                              </div>
+                              <ScrollArea className="h-48 rounded border bg-background/50">
+                                <div ref={logScrollRef} className="p-2 space-y-1 font-mono text-xs">
+                                  {activityLog.map((entry) => (
+                                    <div 
+                                      key={entry.id}
+                                      className={`flex gap-2 ${
+                                        entry.type === 'error' ? 'text-destructive' :
+                                        entry.type === 'city' ? 'text-primary' :
+                                        entry.type === 'restaurant' ? 'text-green-600' :
+                                        entry.type === 'skip' ? 'text-amber-600' :
+                                        'text-muted-foreground'
+                                      }`}
+                                    >
+                                      <span className="text-muted-foreground/50 shrink-0">
+                                        {entry.timestamp.toLocaleTimeString('nl-NL')}
+                                      </span>
+                                      <span>{entry.message}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </ScrollArea>
+                            </div>
+                          )}
 
                           {currentJob.errors && currentJob.errors.length > 0 && (
                             <div className="text-sm">
