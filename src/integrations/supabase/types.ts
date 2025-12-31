@@ -120,6 +120,7 @@ export type Database = {
           id: string
           imported_restaurants: number
           imported_reviews: number
+          last_city: string | null
           processed_cities: number
           skipped_restaurants: number
           started_at: string | null
@@ -134,6 +135,7 @@ export type Database = {
           id?: string
           imported_restaurants?: number
           imported_reviews?: number
+          last_city?: string | null
           processed_cities?: number
           skipped_restaurants?: number
           started_at?: string | null
@@ -148,6 +150,7 @@ export type Database = {
           id?: string
           imported_restaurants?: number
           imported_reviews?: number
+          last_city?: string | null
           processed_cities?: number
           skipped_restaurants?: number
           started_at?: string | null

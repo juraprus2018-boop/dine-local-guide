@@ -701,6 +701,7 @@ async function runBackgroundImport(supabase: any, jobId: string, GOOGLE_API_KEY:
           imported_reviews: totalImportedReviews,
           skipped_restaurants: totalSkipped,
           errors: allErrors,
+          last_city: cityData.name,
         })
         .eq('id', jobId);
     }
@@ -716,6 +717,7 @@ async function runBackgroundImport(supabase: any, jobId: string, GOOGLE_API_KEY:
           imported_reviews: totalImportedReviews,
           skipped_restaurants: totalSkipped,
           errors: allErrors,
+          last_city: DUTCH_CITIES[DUTCH_CITIES.length - 1].name,
         })
         .eq('id', jobId);
 
