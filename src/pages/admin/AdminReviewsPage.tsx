@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Check, X, Star, ArrowLeft, Clock, CheckCircle, Filter } from 'lucide-react';
+import { Check, X, Star, ArrowLeft, Clock, CheckCircle, Filter, Search, Trash2, AlertTriangle } from 'lucide-react';
 import { Layout } from '@/components/layout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -62,13 +63,26 @@ export default function AdminReviewsPage() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'pending' | 'approved' | 'all'>('pending');
-  const [rejectionReason, setRejectionReason] = useState<Record<string, string>>({});
+  const [searchQuery, setSearchQuery] = useState('');
 
   const { data: reviews, isLoading } = useAdminReviews(activeTab);
 
+  // Filter reviews based on search query
+  const filteredReviews = reviews?.filter((review: any) => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      review.guest_name?.toLowerCase().includes(query) ||
+      review.guest_email?.toLowerCase().includes(query) ||
+      review.content?.toLowerCase().includes(query) ||
+      review.title?.toLowerCase().includes(query) ||
+      review.restaurant?.name?.toLowerCase().includes(query) ||
+      review.restaurant?.city?.name?.toLowerCase().includes(query)
+    );
+  });
+
   const approveMutation = useMutation({
     mutationFn: async (reviewId: string) => {
-      // Get review details first
       const { data: review, error: fetchError } = await supabase
         .from('reviews')
         .select(`
@@ -80,7 +94,6 @@ export default function AdminReviewsPage() {
 
       if (fetchError) throw fetchError;
 
-      // Update review status
       const { error } = await supabase
         .from('reviews')
         .update({ is_approved: true })
@@ -88,7 +101,6 @@ export default function AdminReviewsPage() {
 
       if (error) throw error;
 
-      // Send approval email
       if (review.guest_email) {
         const restaurantUrl = review.restaurant?.city?.slug && review.restaurant?.slug
           ? `https://happio.nl/${review.restaurant.city.slug}/${review.restaurant.slug}`
@@ -120,9 +132,7 @@ export default function AdminReviewsPage() {
   });
 
   const rejectMutation = useMutation({
-    mutationFn: async ({ reviewId, reason }: { reviewId: string; reason?: string }) => {
-      // We don't delete, just keep is_approved = false
-      // Optionally we could add a rejection_reason column, but for now we just leave it
+    mutationFn: async ({ reviewId }: { reviewId: string }) => {
       const { error } = await supabase
         .from('reviews')
         .update({ is_approved: false })
@@ -136,6 +146,24 @@ export default function AdminReviewsPage() {
     },
     onError: () => {
       toast({ title: 'Er ging iets mis', variant: 'destructive' });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (reviewId: string) => {
+      const { error } = await supabase
+        .from('reviews')
+        .delete()
+        .eq('id', reviewId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['adminReviews'] });
+      toast({ title: 'Review verwijderd' });
+    },
+    onError: () => {
+      toast({ title: 'Er ging iets mis bij verwijderen', variant: 'destructive' });
     },
   });
 
@@ -156,7 +184,6 @@ export default function AdminReviewsPage() {
   }
 
   const pendingCount = reviews?.filter(r => !r.is_approved).length || 0;
-  const approvedCount = reviews?.filter(r => r.is_approved).length || 0;
 
   return (
     <Layout title="Reviews Beheren">
@@ -172,6 +199,19 @@ export default function AdminReviewsPage() {
           <p className="mt-2 text-muted-foreground">
             Keur reviews goed of af voordat ze op de website verschijnen
           </p>
+        </div>
+
+        {/* Search bar */}
+        <div className="mb-6">
+          <div className="relative max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Zoek op naam, email, restaurant of inhoud..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
         </div>
 
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
@@ -206,9 +246,14 @@ export default function AdminReviewsPage() {
                   </Card>
                 ))}
               </div>
-            ) : reviews && reviews.length > 0 ? (
+            ) : filteredReviews && filteredReviews.length > 0 ? (
               <div className="space-y-4">
-                {reviews.map((review: any) => (
+                {searchQuery && (
+                  <p className="text-sm text-muted-foreground">
+                    {filteredReviews.length} resultaten gevonden
+                  </p>
+                )}
+                {filteredReviews.map((review: any) => (
                   <Card key={review.id} className={cn(
                     !review.is_approved && 'border-warning/50 bg-warning/5'
                   )}>
@@ -228,6 +273,11 @@ export default function AdminReviewsPage() {
                               <Badge variant={review.is_approved ? 'default' : 'secondary'}>
                                 {review.is_approved ? 'Goedgekeurd' : 'Wachtend'}
                               </Badge>
+                              {review.is_verified && (
+                                <Badge variant="outline" className="text-xs">
+                                  Geverifieerd
+                                </Badge>
+                              )}
                             </div>
                             <span className="text-sm text-muted-foreground">
                               {new Date(review.created_at).toLocaleDateString('nl-NL', {
@@ -269,30 +319,69 @@ export default function AdminReviewsPage() {
                             </p>
                           )}
 
-                          {/* Actions for pending reviews */}
-                          {!review.is_approved && (
-                            <div className="mt-4 flex flex-wrap items-center gap-2">
-                              <Button
-                                size="sm"
-                                onClick={() => approveMutation.mutate(review.id)}
-                                disabled={approveMutation.isPending}
-                                className="gap-2"
-                              >
-                                <Check className="h-4 w-4" />
-                                Goedkeuren
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => rejectMutation.mutate({ reviewId: review.id })}
-                                disabled={rejectMutation.isPending}
-                                className="gap-2"
-                              >
-                                <X className="h-4 w-4" />
-                                Afkeuren
-                              </Button>
-                            </div>
-                          )}
+                          {/* Actions */}
+                          <div className="mt-4 flex flex-wrap items-center gap-2">
+                            {!review.is_approved && (
+                              <>
+                                <Button
+                                  size="sm"
+                                  onClick={() => approveMutation.mutate(review.id)}
+                                  disabled={approveMutation.isPending}
+                                  className="gap-2"
+                                >
+                                  <Check className="h-4 w-4" />
+                                  Goedkeuren
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => rejectMutation.mutate({ reviewId: review.id })}
+                                  disabled={rejectMutation.isPending}
+                                  className="gap-2"
+                                >
+                                  <X className="h-4 w-4" />
+                                  Afkeuren
+                                </Button>
+                              </>
+                            )}
+                            
+                            {/* Delete button with confirmation */}
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                  Verwijderen
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle className="flex items-center gap-2">
+                                    <AlertTriangle className="h-5 w-5 text-destructive" />
+                                    Review verwijderen?
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Weet je zeker dat je deze review wilt verwijderen? Dit kan niet ongedaan worden gemaakt.
+                                    <br /><br />
+                                    <strong>Review van:</strong> {review.guest_name || 'Gast'}<br />
+                                    <strong>Restaurant:</strong> {review.restaurant?.name || 'Onbekend'}
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Annuleren</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => deleteMutation.mutate(review.id)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Verwijderen
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
                         </div>
                       </div>
                     </CardContent>
@@ -303,11 +392,15 @@ export default function AdminReviewsPage() {
               <Card>
                 <CardContent className="py-12 text-center">
                   <CheckCircle className="h-12 w-12 mx-auto text-muted-foreground/50" />
-                  <h3 className="mt-4 font-medium">Geen reviews</h3>
+                  <h3 className="mt-4 font-medium">
+                    {searchQuery ? 'Geen resultaten' : 'Geen reviews'}
+                  </h3>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    {activeTab === 'pending' 
-                      ? 'Er zijn geen reviews die wachten op goedkeuring'
-                      : 'Er zijn nog geen reviews'}
+                    {searchQuery 
+                      ? `Geen reviews gevonden voor "${searchQuery}"`
+                      : activeTab === 'pending' 
+                        ? 'Er zijn geen reviews die wachten op goedkeuring'
+                        : 'Er zijn nog geen reviews'}
                   </p>
                 </CardContent>
               </Card>
