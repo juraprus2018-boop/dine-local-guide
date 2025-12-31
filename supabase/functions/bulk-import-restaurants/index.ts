@@ -1,6 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// Declare EdgeRuntime for background tasks
+declare const EdgeRuntime: {
+  waitUntil: (promise: Promise<any>) => void;
+};
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -394,6 +399,277 @@ async function downloadAndUploadImage(
   }
 }
 
+// Background import process that runs independently
+async function runBackgroundImport(supabase: any, jobId: string, GOOGLE_API_KEY: string) {
+  console.log(`Starting background import for job ${jobId}`);
+  
+  try {
+    // Update job status to running
+    await supabase
+      .from('import_jobs')
+      .update({
+        status: 'running',
+        started_at: new Date().toISOString(),
+        total_cities: DUTCH_CITIES.length,
+      })
+      .eq('id', jobId);
+
+    let processedCities = 0;
+    let totalImportedRestaurants = 0;
+    let totalImportedReviews = 0;
+    let totalSkipped = 0;
+    const allErrors: string[] = [];
+
+    for (const cityData of DUTCH_CITIES) {
+      console.log(`Processing city: ${cityData.name} (${processedCities + 1}/${DUTCH_CITIES.length})`);
+      
+      try {
+        // Create or get city
+        const citySlug = createSlug(cityData.name);
+        let cityId: string;
+
+        const { data: existingCity } = await supabase
+          .from('cities')
+          .select('id')
+          .eq('slug', citySlug)
+          .maybeSingle();
+
+        if (existingCity) {
+          cityId = existingCity.id;
+        } else {
+          const { data: newCity, error: cityError } = await supabase
+            .from('cities')
+            .insert({
+              name: cityData.name,
+              slug: citySlug,
+              province: cityData.province,
+              latitude: cityData.lat,
+              longitude: cityData.lng,
+              description: `Ontdek de beste restaurants in ${cityData.name}, ${cityData.province}. Van gezellige eetcafés tot fine dining.`,
+              meta_title: `Beste Restaurants ${cityData.name} | Reviews & Menu's | Happio`,
+              meta_description: `Vind de ${cityData.name} beste restaurants. Lees reviews, bekijk menu's en reserveer direct. ✓ Actuele openingstijden ✓ Foto's ✓ Beoordelingen`,
+            })
+            .select('id')
+            .single();
+
+          if (cityError) {
+            console.error(`Error creating city ${cityData.name}:`, cityError);
+            allErrors.push(`City ${cityData.name}: ${cityError.message}`);
+            processedCities++;
+            continue;
+          }
+          cityId = newCity.id;
+        }
+
+        // Search for restaurants in this city
+        const searchUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${cityData.lat},${cityData.lng}&radius=5000&type=restaurant&key=${GOOGLE_API_KEY}`;
+        
+        const searchResponse = await fetch(searchUrl);
+        const searchData = await searchResponse.json();
+
+        if (searchData.status !== 'OK' || !searchData.results) {
+          console.log(`No results for ${cityData.name}: ${searchData.status}`);
+          processedCities++;
+          continue;
+        }
+
+        // Excluded types (hotels, B&Bs, etc.)
+        const excludedTypes = ['lodging', 'hotel', 'bed_and_breakfast', 'guest_house', 'campground', 'rv_park', 'motel'];
+        
+        // Get top 5 restaurants by rating, excluding hotels/B&Bs
+        const topRestaurants = searchData.results
+          .filter((r: any) => {
+            if (r.rating < 3.5) return false;
+            if (r.types && r.types.some((t: string) => excludedTypes.includes(t))) {
+              return false;
+            }
+            return true;
+          })
+          .sort((a: any, b: any) => (b.rating || 0) - (a.rating || 0))
+          .slice(0, 5);
+
+        for (const place of topRestaurants) {
+          // Check if already exists
+          const { data: existing } = await supabase
+            .from('restaurants')
+            .select('id')
+            .eq('google_place_id', place.place_id)
+            .maybeSingle();
+
+          if (existing) {
+            totalSkipped++;
+            continue;
+          }
+
+          // Get place details with reviews
+          const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${place.place_id}&fields=name,formatted_address,formatted_phone_number,website,opening_hours,price_level,rating,user_ratings_total,photos,types,geometry,reviews&key=${GOOGLE_API_KEY}`;
+          
+          const detailsResponse = await fetch(detailsUrl);
+          const detailsData = await detailsResponse.json();
+
+          if (detailsData.status !== 'OK') {
+            console.log(`Could not get details for ${place.name}`);
+            continue;
+          }
+
+          const details = detailsData.result;
+          const restaurantSlug = createSlug(details.name);
+
+          // Download and upload photo
+          let imageUrl = null;
+          if (details.photos && details.photos.length > 0) {
+            const photoRef = details.photos[0].photo_reference;
+            const googlePhotoUrl = `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photo_reference=${photoRef}&key=${GOOGLE_API_KEY}`;
+            imageUrl = await downloadAndUploadImage(supabase, googlePhotoUrl, citySlug, restaurantSlug);
+          }
+
+          // Map price level
+          const priceRangeMap: Record<number, string> = {
+            1: '€',
+            2: '€€',
+            3: '€€€',
+            4: '€€€€',
+          };
+
+          const normalizedRating = details.rating ? Math.round(details.rating) : null;
+
+          // Insert restaurant
+          const { data: newRestaurant, error: restaurantError } = await supabase
+            .from('restaurants')
+            .insert({
+              google_place_id: place.place_id,
+              name: details.name,
+              slug: restaurantSlug,
+              description: `${details.name} is een restaurant in ${cityData.name}. Bekijk onze reviews, menu en openingstijden.`,
+              address: details.formatted_address?.split(',')[0] || '',
+              postal_code: details.formatted_address?.match(/\d{4}\s?[A-Z]{2}/)?.[0] || null,
+              city_id: cityId,
+              latitude: details.geometry?.location?.lat || cityData.lat,
+              longitude: details.geometry?.location?.lng || cityData.lng,
+              phone: details.formatted_phone_number || null,
+              website: details.website || null,
+              price_range: details.price_level ? priceRangeMap[details.price_level] : null,
+              rating: normalizedRating,
+              review_count: details.user_ratings_total || 0,
+              image_url: imageUrl,
+              opening_hours: details.opening_hours?.weekday_text ? {} : null,
+              features: [],
+              meta_title: `${details.name} ${cityData.name} | ★ ${details.rating || 'N/A'}${details.price_level ? ' · ' + priceRangeMap[details.price_level] : ''} | Happio`,
+              meta_description: `${details.name} in ${cityData.name}, ${cityData.province}. Beoordeling: ★ ${details.rating || 'N/A'}. Bekijk menu, openingstijden en reserveer online. ✓ Reviews ✓ Foto's`,
+            })
+            .select('id')
+            .single();
+
+          if (restaurantError) {
+            console.error(`Error inserting restaurant ${details.name}:`, restaurantError);
+            allErrors.push(`Restaurant ${details.name}: ${restaurantError.message}`);
+            continue;
+          }
+
+          totalImportedRestaurants++;
+
+          // Import Google reviews (max 5 per restaurant)
+          if (details.reviews && details.reviews.length > 0 && newRestaurant) {
+            for (const review of details.reviews.slice(0, 5)) {
+              if (!review.text || review.text.trim().length === 0) continue;
+
+              const { error: reviewError } = await supabase
+                .from('reviews')
+                .insert({
+                  restaurant_id: newRestaurant.id,
+                  rating: review.rating || 5,
+                  content: review.text,
+                  guest_name: review.author_name || 'Google Reviewer',
+                  is_approved: true,
+                  is_verified: true,
+                  created_at: review.time ? new Date(review.time * 1000).toISOString() : new Date().toISOString(),
+                });
+
+              if (!reviewError) {
+                totalImportedReviews++;
+              }
+            }
+          }
+
+          // Link cuisines based on Google types
+          if (details.types && newRestaurant) {
+            for (const type of details.types) {
+              const cuisineSlug = CUISINE_MAPPING[type];
+              if (cuisineSlug) {
+                const { data: cuisine } = await supabase
+                  .from('cuisine_types')
+                  .select('id')
+                  .eq('slug', cuisineSlug)
+                  .maybeSingle();
+
+                if (cuisine) {
+                  await supabase
+                    .from('restaurant_cuisines')
+                    .insert({
+                      restaurant_id: newRestaurant.id,
+                      cuisine_id: cuisine.id,
+                    })
+                    .select();
+                }
+              }
+            }
+          }
+
+          // Small delay to avoid rate limiting
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+
+      } catch (cityError: any) {
+        console.error(`Error processing city ${cityData.name}:`, cityError);
+        allErrors.push(`City ${cityData.name}: ${cityError.message || 'Unknown error'}`);
+      }
+
+      processedCities++;
+
+      // Update progress in database every 5 cities
+      if (processedCities % 5 === 0 || processedCities === DUTCH_CITIES.length) {
+        await supabase
+          .from('import_jobs')
+          .update({
+            processed_cities: processedCities,
+            imported_restaurants: totalImportedRestaurants,
+            imported_reviews: totalImportedReviews,
+            skipped_restaurants: totalSkipped,
+            errors: allErrors.slice(-50), // Keep last 50 errors
+          })
+          .eq('id', jobId);
+      }
+    }
+
+    // Mark job as completed
+    await supabase
+      .from('import_jobs')
+      .update({
+        status: 'completed',
+        completed_at: new Date().toISOString(),
+        processed_cities: processedCities,
+        imported_restaurants: totalImportedRestaurants,
+        imported_reviews: totalImportedReviews,
+        skipped_restaurants: totalSkipped,
+        errors: allErrors.slice(-50),
+      })
+      .eq('id', jobId);
+
+    console.log(`Background import completed for job ${jobId}: ${totalImportedRestaurants} restaurants, ${totalImportedReviews} reviews`);
+
+  } catch (error: any) {
+    console.error(`Background import failed for job ${jobId}:`, error);
+    await supabase
+      .from('import_jobs')
+      .update({
+        status: 'failed',
+        completed_at: new Date().toISOString(),
+        errors: [error.message || 'Unknown error'],
+      })
+      .eq('id', jobId);
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -410,7 +686,81 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { startIndex = 0, batchSize = 5 } = await req.json();
+    const body = await req.json();
+    const { action } = body;
+
+    // Action: start - Start a new background import job
+    if (action === 'start') {
+      // Check if there's already a running job
+      const { data: runningJob } = await supabase
+        .from('import_jobs')
+        .select('id')
+        .eq('status', 'running')
+        .maybeSingle();
+
+      if (runningJob) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Er is al een import bezig',
+            jobId: runningJob.id,
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // Create new job
+      const { data: newJob, error: jobError } = await supabase
+        .from('import_jobs')
+        .insert({
+          status: 'pending',
+          total_cities: DUTCH_CITIES.length,
+        })
+        .select('id')
+        .single();
+
+      if (jobError) {
+        throw new Error(`Could not create job: ${jobError.message}`);
+      }
+
+      // Start background import using EdgeRuntime.waitUntil
+      EdgeRuntime.waitUntil(runBackgroundImport(supabase, newJob.id, GOOGLE_API_KEY));
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'Import gestart op de achtergrond',
+          jobId: newJob.id,
+          totalCities: DUTCH_CITIES.length,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Action: status - Get current job status
+    if (action === 'status') {
+      const { data: latestJob, error } = await supabase
+        .from('import_jobs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        throw new Error(`Could not get status: ${error.message}`);
+      }
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          job: latestJob,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Legacy batch mode for backwards compatibility
+    const { startIndex = 0, batchSize = 5 } = body;
 
     // Get cities to process in this batch
     const citiesToProcess = DUTCH_CITIES.slice(startIndex, startIndex + batchSize);
