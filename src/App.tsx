@@ -16,6 +16,7 @@ import CuisinesPage from "./pages/CuisinesPage";
 import ProvincesPage from "./pages/ProvincesPage";
 import NearbyPage from "./pages/NearbyPage";
 import SearchPage from "./pages/SearchPage";
+import ReviewsPage from "./pages/ReviewsPage";
 import AdminPage from "./pages/admin/AdminPage";
 import AdminRestaurantsPage from "./pages/admin/AdminRestaurantsPage";
 import AdminRestaurantEditPage from "./pages/admin/AdminRestaurantEditPage";
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/provincies" element={<ProvincesPage />} />
             <Route path="/in-de-buurt" element={<NearbyPage />} />
             <Route path="/zoeken" element={<SearchPage />} />
+            <Route path="/reviews" element={<ReviewsPage />} />
             <Route path="/favorieten" element={<FavoritesPage />} />
             <Route path="/profiel" element={<ProfilePage />} />
             <Route path="/admin" element={<AdminPage />} />
