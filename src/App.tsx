@@ -22,6 +22,7 @@ import AdminRestaurantsPage from "./pages/admin/AdminRestaurantsPage";
 import AdminRestaurantEditPage from "./pages/admin/AdminRestaurantEditPage";
 import AdminImportPage from "./pages/admin/AdminImportPage";
 import AdminClaimsPage from "./pages/admin/AdminClaimsPage";
+import AdminReviewsPage from "./pages/admin/AdminReviewsPage";
 
 const queryClient = new QueryClient();
 
@@ -49,6 +50,7 @@ const App = () => (
             <Route path="/admin/restaurants/:id/edit" element={<AdminRestaurantEditPage />} />
             <Route path="/admin/import" element={<AdminImportPage />} />
             <Route path="/admin/claims" element={<AdminClaimsPage />} />
+            <Route path="/admin/reviews" element={<AdminReviewsPage />} />
             <Route path="/:citySlug" element={<CityPage />} />
             <Route path="/:citySlug/:restaurantSlug" element={<RestaurantPage />} />
             <Route path="*" element={<NotFound />} />
