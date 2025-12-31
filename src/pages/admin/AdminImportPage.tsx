@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, MapPin, Loader2, Building2 } from 'lucide-react';
+import { ArrowLeft, Download, MapPin, Loader2, Building2, Utensils } from 'lucide-react';
 import { Layout } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +18,7 @@ export default function AdminImportPage() {
   const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [radius, setRadius] = useState(5000);
   const [isImporting, setIsImporting] = useState(false);
+  const [isLinkingCuisines, setIsLinkingCuisines] = useState(false);
   const [importResult, setImportResult] = useState<{
     imported: string[];
     skipped: string[];
@@ -73,6 +74,28 @@ export default function AdminImportPage() {
       toast.error(errorMsg);
     } finally {
       setIsImporting(false);
+    }
+  };
+
+  const handleLinkCuisines = async () => {
+    setIsLinkingCuisines(true);
+    
+    try {
+      const response = await supabase.functions.invoke('link-cuisines');
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      const result = response.data;
+      toast.success(`${result.cuisinesLinked} keuken-koppelingen gemaakt voor ${result.processed} restaurants!`);
+      
+    } catch (error: unknown) {
+      console.error('Link cuisines error:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Er ging iets mis bij het koppelen van keukens';
+      toast.error(errorMsg);
+    } finally {
+      setIsLinkingCuisines(false);
     }
   };
 
@@ -172,6 +195,38 @@ export default function AdminImportPage() {
                       <>
                         <Download className="mr-2 h-5 w-5" />
                         Importeer Restaurants
+                      </>
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Utensils className="h-5 w-5" />
+                    Keukens Koppelen
+                  </CardTitle>
+                  <CardDescription>
+                    Koppel bestaande restaurants aan keuken types op basis van Google Places data.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Button 
+                    onClick={handleLinkCuisines} 
+                    disabled={isLinkingCuisines}
+                    className="w-full"
+                    variant="outline"
+                  >
+                    {isLinkingCuisines ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Keukens koppelen...
+                      </>
+                    ) : (
+                      <>
+                        <Utensils className="mr-2 h-5 w-5" />
+                        Koppel Keukens aan Restaurants
                       </>
                     )}
                   </Button>

@@ -3,5 +3,7 @@ project_id = "eoxcxesrejwbczhyjjsf"
 [functions.import-google-places]
 verify_jwt = false
 
+[functions.link-cuisines]
+verify_jwt = false
 [functions.send-email]
 verify_jwt = false
