@@ -402,6 +402,7 @@ async function downloadAndUploadImage(
 // Background import process (chunked) to avoid runtime shutdown/timeouts
 const MAX_CITIES_PER_CHUNK = 2;
 const MAX_CHUNK_MS = 25_000;
+const MAX_RESTAURANTS_PER_CITY = 60;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -463,13 +464,41 @@ async function processCity(
     cityId = newCity.id;
   }
 
-  // Search for restaurants in this city
-  const searchUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${cityData.lat},${cityData.lng}&radius=5000&type=restaurant&key=${GOOGLE_API_KEY}`;
-  const searchResponse = await fetch(searchUrl);
-  const searchData = await searchResponse.json();
+  // Search for restaurants in this city (Google Places returns max ~60 results via pagination)
+  const fetchNearbyPage = async (pageToken?: string) => {
+    const url = pageToken
+      ? `https://maps.googleapis.com/maps/api/place/nearbysearch/json?pagetoken=${pageToken}&key=${GOOGLE_API_KEY}`
+      : `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${cityData.lat},${cityData.lng}&radius=5000&type=restaurant&key=${GOOGLE_API_KEY}`;
 
-  if (searchData.status !== 'OK' || !searchData.results) {
-    errors.push(`Nearby search: ${searchData.status || 'unknown'}`);
+    const resp = await fetch(url);
+    return await resp.json();
+  };
+
+  const allResults: any[] = [];
+  let nextPageToken: string | undefined;
+
+  for (let page = 0; page < 3; page++) {
+    if (page > 0) {
+      // Google requires a short wait before next_page_token becomes active
+      await sleep(2000);
+    }
+
+    const data = await fetchNearbyPage(nextPageToken);
+
+    if (data.status === 'ZERO_RESULTS') break;
+    if (data.status !== 'OK' || !Array.isArray(data.results)) {
+      errors.push(`Nearby search: ${data.status || 'unknown'}`);
+      break;
+    }
+
+    allResults.push(...data.results);
+    nextPageToken = data.next_page_token;
+
+    if (!nextPageToken) break;
+    if (allResults.length >= MAX_RESTAURANTS_PER_CITY) break;
+  }
+
+  if (allResults.length === 0) {
     return { importedRestaurants, importedReviews, skippedRestaurants, errors };
   }
 
@@ -483,15 +512,14 @@ async function processCity(
     'motel',
   ];
 
-  // Keep API usage predictable: 5 restaurants per city
-  const topRestaurants = searchData.results
+  const topRestaurants = allResults
     .filter((r: any) => {
       if (r.rating && r.rating < 3.5) return false;
       if (r.types && r.types.some((t: string) => excludedTypes.includes(t))) return false;
       return true;
     })
     .sort((a: any, b: any) => (b.rating || 0) - (a.rating || 0))
-    .slice(0, 5);
+    .slice(0, MAX_RESTAURANTS_PER_CITY);
 
   for (const place of topRestaurants) {
     // Skip if restaurant already exists by google_place_id
@@ -660,7 +688,9 @@ async function runBackgroundImport(supabase: any, jobId: string, GOOGLE_API_KEY:
     if (jobFetchError) throw new Error(`Job fetch failed: ${jobFetchError.message}`);
     if (!job) throw new Error('Job not found');
 
-    if (job.status === 'pending') {
+    let currentStatus: string = job.status;
+
+    if (currentStatus === 'pending') {
       await supabase
         .from('import_jobs')
         .update({
@@ -669,10 +699,12 @@ async function runBackgroundImport(supabase: any, jobId: string, GOOGLE_API_KEY:
           total_cities: DUTCH_CITIES.length,
         })
         .eq('id', jobId);
+
+      currentStatus = 'running';
     }
 
-    if (job.status === 'completed' || job.status === 'failed') {
-      console.log(`[bulk-import] job already ${job.status}, exiting`);
+    if (currentStatus !== 'running') {
+      console.log(`[bulk-import] job status=${currentStatus}, exiting`);
       return;
     }
 
@@ -704,7 +736,7 @@ async function runBackgroundImport(supabase: any, jobId: string, GOOGLE_API_KEY:
           .select('id', { count: 'exact', head: true })
           .eq('city_id', cityRecord.id);
 
-        if (existingCount && existingCount >= 3) {
+        if (existingCount && existingCount >= MAX_RESTAURANTS_PER_CITY) {
           // City already has restaurants, skip it
           console.log(
             `[bulk-import] job=${jobId} city=${cityData.name} already has ${existingCount} restaurants, skipping`
