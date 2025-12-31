@@ -25,6 +25,7 @@ export default function AdminImportPage() {
     processed: number;
     total: number;
     currentBatch: any[];
+    totalApiCalls: number;
   } | null>(null);
   const [importResult, setImportResult] = useState<{
     imported: string[];
@@ -108,11 +109,13 @@ export default function AdminImportPage() {
 
   const handleBulkImport = async () => {
     setIsBulkImporting(true);
-    setBulkProgress({ processed: 0, total: 50, currentBatch: [] });
+    setBulkProgress({ processed: 0, total: 0, currentBatch: [], totalApiCalls: 0 });
 
     let nextIndex: number | null = 0;
+    let totalApiCalls = 0;
+    let shouldContinue = true;
     
-    while (nextIndex !== null && isBulkImporting) {
+    while (nextIndex !== null && shouldContinue) {
       try {
         const response = await supabase.functions.invoke('bulk-import-restaurants', {
           body: {
@@ -126,19 +129,24 @@ export default function AdminImportPage() {
         }
 
         const result = response.data;
+        totalApiCalls += result.apiCallsThisBatch || 0;
         
         setBulkProgress({
           processed: result.processed,
           total: result.totalCities,
           currentBatch: result.results,
+          totalApiCalls,
         });
 
         if (result.completed) {
-          toast.success('Alle steden zijn verwerkt!');
+          toast.success(`Alle ${result.totalCities} steden zijn verwerkt! Totaal ${totalApiCalls} API calls gebruikt.`);
           break;
         }
 
         nextIndex = result.nextIndex;
+        
+        // Check if we should continue (user might have pressed stop)
+        shouldContinue = true; // Will be set to false by handleStopBulkImport
         
         // Small delay between batches
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -300,24 +308,33 @@ export default function AdminImportPage() {
                     Bulk Import Nederland
                   </CardTitle>
                   <CardDescription>
-                    Importeer automatisch 5 restaurants per stad voor de 50 grootste steden van Nederland.
+                    Importeer automatisch 5 restaurants per stad voor alle ~350 steden van Nederland.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {bulkProgress && (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <div className="flex justify-between text-sm">
                         <span>Voortgang</span>
                         <span>{bulkProgress.processed} / {bulkProgress.total} steden</span>
                       </div>
-                      <Progress value={(bulkProgress.processed / bulkProgress.total) * 100} />
+                      <Progress value={bulkProgress.total > 0 ? (bulkProgress.processed / bulkProgress.total) * 100 : 0} />
+                      
+                      <div className="rounded-lg bg-primary/10 p-3">
+                        <p className="text-sm font-semibold text-primary">
+                          📊 API Calls: {bulkProgress.totalApiCalls.toLocaleString()}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          ~{Math.round(bulkProgress.totalApiCalls * 0.017 * 100) / 100}€ geschatte kosten
+                        </p>
+                      </div>
                       
                       {bulkProgress.currentBatch.length > 0 && (
                         <div className="mt-3 text-sm text-muted-foreground">
                           <p className="font-medium mb-1">Laatste batch:</p>
                           {bulkProgress.currentBatch.map((item: any, i: number) => (
                             <p key={i}>
-                              {item.city}: {item.imported} restaurants 
+                              {item.city}: {item.imported} restaurants ({item.apiCalls} calls)
                               {item.error && <span className="text-destructive"> ({item.error})</span>}
                             </p>
                           ))}
@@ -342,12 +359,12 @@ export default function AdminImportPage() {
                       variant="default"
                     >
                       <Play className="mr-2 h-5 w-5" />
-                      Start Bulk Import (50 steden)
+                      Start Bulk Import (~350 steden)
                     </Button>
                   )}
                   
                   <p className="text-xs text-muted-foreground">
-                    ⚠️ Dit gebruikt veel Google API credits. Zorg dat je voldoende budget hebt.
+                    ⚠️ Dit kan ~5000+ API calls gebruiken. Max 5 restaurants per stad. Geschatte kosten: ~€85-100.
                   </p>
                 </CardContent>
               </Card>
