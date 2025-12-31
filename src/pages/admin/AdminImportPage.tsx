@@ -1,16 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, MapPin, Loader2, Building2, Utensils, Globe, Play, Pause } from 'lucide-react';
+import { ArrowLeft, Download, MapPin, Loader2, Building2, Utensils, Globe, Play, RefreshCw, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { Layout } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
 import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import RestaurantMap from '@/components/maps/RestaurantMap';
-import { useEffect } from 'react';
+
+interface ImportJob {
+  id: string;
+  status: string;
+  total_cities: number;
+  processed_cities: number;
+  imported_restaurants: number;
+  imported_reviews: number;
+  skipped_restaurants: number;
+  errors: string[];
+  started_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+}
 
 export default function AdminImportPage() {
   const navigate = useNavigate();
@@ -20,19 +34,48 @@ export default function AdminImportPage() {
   const [radius, setRadius] = useState(5000);
   const [isImporting, setIsImporting] = useState(false);
   const [isLinkingCuisines, setIsLinkingCuisines] = useState(false);
-  const [isBulkImporting, setIsBulkImporting] = useState(false);
-  const [bulkProgress, setBulkProgress] = useState<{
-    processed: number;
-    total: number;
-    currentBatch: any[];
-    totalApiCalls: number;
-  } | null>(null);
+  const [currentJob, setCurrentJob] = useState<ImportJob | null>(null);
+  const [isLoadingStatus, setIsLoadingStatus] = useState(false);
   const [importResult, setImportResult] = useState<{
     imported: string[];
     skipped: string[];
     errors: string[];
     citiesCreated: string[];
   } | null>(null);
+
+  // Fetch job status
+  const fetchJobStatus = useCallback(async () => {
+    try {
+      const response = await supabase.functions.invoke('bulk-import-restaurants', {
+        body: { action: 'status' },
+      });
+
+      if (response.error) {
+        console.error('Status fetch error:', response.error);
+        return;
+      }
+
+      if (response.data?.job) {
+        setCurrentJob(response.data.job);
+      }
+    } catch (error) {
+      console.error('Error fetching status:', error);
+    }
+  }, []);
+
+  // Poll for status while job is running
+  useEffect(() => {
+    fetchJobStatus();
+
+    // Poll every 5 seconds if job is running
+    const interval = setInterval(() => {
+      if (currentJob?.status === 'running' || currentJob?.status === 'pending') {
+        fetchJobStatus();
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [fetchJobStatus, currentJob?.status]);
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin())) {
@@ -107,64 +150,67 @@ export default function AdminImportPage() {
     }
   };
 
-  const handleBulkImport = async () => {
-    setIsBulkImporting(true);
-    setBulkProgress({ processed: 0, total: 0, currentBatch: [], totalApiCalls: 0 });
+  const handleStartBulkImport = async () => {
+    setIsLoadingStatus(true);
 
-    let nextIndex: number | null = 0;
-    let totalApiCalls = 0;
-    let shouldContinue = true;
-    
-    while (nextIndex !== null && shouldContinue) {
-      try {
-        const response = await supabase.functions.invoke('bulk-import-restaurants', {
-          body: {
-            startIndex: nextIndex,
-            batchSize: 3, // Process 3 cities at a time
-          },
-        });
+    try {
+      const response = await supabase.functions.invoke('bulk-import-restaurants', {
+        body: { action: 'start' },
+      });
 
-        if (response.error) {
-          throw new Error(response.error.message);
-        }
-
-        const result = response.data;
-        totalApiCalls += result.apiCallsThisBatch || 0;
-        
-        setBulkProgress({
-          processed: result.processed,
-          total: result.totalCities,
-          currentBatch: result.results,
-          totalApiCalls,
-        });
-
-        if (result.completed) {
-          toast.success(`Alle ${result.totalCities} steden zijn verwerkt! Totaal ${totalApiCalls} API calls gebruikt.`);
-          break;
-        }
-
-        nextIndex = result.nextIndex;
-        
-        // Check if we should continue (user might have pressed stop)
-        shouldContinue = true; // Will be set to false by handleStopBulkImport
-        
-        // Small delay between batches
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-      } catch (error: unknown) {
-        console.error('Bulk import error:', error);
-        const errorMsg = error instanceof Error ? error.message : 'Er ging iets mis';
-        toast.error(errorMsg);
-        break;
+      if (response.error) {
+        throw new Error(response.error.message);
       }
-    }
 
-    setIsBulkImporting(false);
+      if (!response.data.success) {
+        toast.error(response.data.error || 'Kon import niet starten');
+        return;
+      }
+
+      toast.success('Import gestart! Dit draait op de achtergrond.');
+      
+      // Refresh status
+      await fetchJobStatus();
+      
+    } catch (error: unknown) {
+      console.error('Start import error:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Er ging iets mis';
+      toast.error(errorMsg);
+    } finally {
+      setIsLoadingStatus(false);
+    }
   };
 
-  const handleStopBulkImport = () => {
-    setIsBulkImporting(false);
-    toast.info('Import wordt gestopt na huidige batch...');
+  const handleRefreshStatus = async () => {
+    setIsLoadingStatus(true);
+    await fetchJobStatus();
+    setIsLoadingStatus(false);
+    toast.success('Status vernieuwd');
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'running':
+        return <Badge className="bg-blue-500"><Loader2 className="mr-1 h-3 w-3 animate-spin" /> Bezig</Badge>;
+      case 'completed':
+        return <Badge className="bg-green-500"><CheckCircle className="mr-1 h-3 w-3" /> Voltooid</Badge>;
+      case 'failed':
+        return <Badge variant="destructive"><XCircle className="mr-1 h-3 w-3" /> Mislukt</Badge>;
+      case 'pending':
+        return <Badge variant="secondary"><Clock className="mr-1 h-3 w-3" /> Wachtend</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  const formatDuration = (startedAt: string | null, completedAt: string | null) => {
+    if (!startedAt) return '-';
+    const start = new Date(startedAt);
+    const end = completedAt ? new Date(completedAt) : new Date();
+    const diffMs = end.getTime() - start.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffSecs = Math.floor((diffMs % 60000) / 1000);
+    return `${diffMins}m ${diffSecs}s`;
   };
 
   if (authLoading || !user || !isAdmin()) return null;
@@ -309,62 +355,106 @@ export default function AdminImportPage() {
                   </CardTitle>
                   <CardDescription>
                     Importeer automatisch 5 restaurants per stad voor alle ~350 steden van Nederland.
+                    <strong className="block mt-1 text-primary">✓ Draait op de achtergrond - je kunt de pagina verlaten!</strong>
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {bulkProgress && (
-                    <div className="space-y-3">
-                      <div className="flex justify-between text-sm">
-                        <span>Voortgang</span>
-                        <span>{bulkProgress.processed} / {bulkProgress.total} steden</span>
-                      </div>
-                      <Progress value={bulkProgress.total > 0 ? (bulkProgress.processed / bulkProgress.total) * 100 : 0} />
-                      
-                      <div className="rounded-lg bg-primary/10 p-3">
-                        <p className="text-sm font-semibold text-primary">
-                          📊 API Calls: {bulkProgress.totalApiCalls.toLocaleString()}
-                        </p>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          ~{Math.round(bulkProgress.totalApiCalls * 0.017 * 100) / 100}€ geschatte kosten
-                        </p>
+                  {currentJob && (
+                    <div className="space-y-4 p-4 rounded-lg bg-muted">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">Import Status</span>
+                        {getStatusBadge(currentJob.status)}
                       </div>
                       
-                      {bulkProgress.currentBatch.length > 0 && (
-                        <div className="mt-3 text-sm text-muted-foreground">
-                          <p className="font-medium mb-1">Laatste batch:</p>
-                          {bulkProgress.currentBatch.map((item: any, i: number) => (
-                            <p key={i}>
-                              {item.city}: {item.imported} restaurants ({item.apiCalls} calls)
-                              {item.error && <span className="text-destructive"> ({item.error})</span>}
-                            </p>
-                          ))}
-                        </div>
+                      {(currentJob.status === 'running' || currentJob.status === 'completed') && (
+                        <>
+                          <div className="space-y-2">
+                            <div className="flex justify-between text-sm">
+                              <span>Voortgang</span>
+                              <span>{currentJob.processed_cities} / {currentJob.total_cities} steden</span>
+                            </div>
+                            <Progress 
+                              value={currentJob.total_cities > 0 
+                                ? (currentJob.processed_cities / currentJob.total_cities) * 100 
+                                : 0
+                              } 
+                            />
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            <div className="p-2 rounded bg-green-500/10 text-green-700">
+                              <div className="font-medium">{currentJob.imported_restaurants}</div>
+                              <div className="text-xs">Restaurants</div>
+                            </div>
+                            <div className="p-2 rounded bg-blue-500/10 text-blue-700">
+                              <div className="font-medium">{currentJob.imported_reviews}</div>
+                              <div className="text-xs">Reviews</div>
+                            </div>
+                            <div className="p-2 rounded bg-amber-500/10 text-amber-700">
+                              <div className="font-medium">{currentJob.skipped_restaurants}</div>
+                              <div className="text-xs">Overgeslagen</div>
+                            </div>
+                            <div className="p-2 rounded bg-muted-foreground/10">
+                              <div className="font-medium">{formatDuration(currentJob.started_at, currentJob.completed_at)}</div>
+                              <div className="text-xs">Duur</div>
+                            </div>
+                          </div>
+
+                          {currentJob.errors && currentJob.errors.length > 0 && (
+                            <div className="text-sm">
+                              <p className="font-medium text-destructive mb-1">
+                                Laatste fouten ({currentJob.errors.length}):
+                              </p>
+                              <ul className="text-xs text-muted-foreground max-h-24 overflow-y-auto space-y-1">
+                                {currentJob.errors.slice(-5).map((error, i) => (
+                                  <li key={i} className="truncate">{error}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   )}
                   
-                  {isBulkImporting ? (
+                  <div className="flex gap-2">
+                    {currentJob?.status === 'running' ? (
+                      <Button 
+                        onClick={handleRefreshStatus}
+                        className="flex-1"
+                        variant="outline"
+                        disabled={isLoadingStatus}
+                      >
+                        <RefreshCw className={`mr-2 h-4 w-4 ${isLoadingStatus ? 'animate-spin' : ''}`} />
+                        Ververs Status
+                      </Button>
+                    ) : (
+                      <Button 
+                        onClick={handleStartBulkImport}
+                        className="flex-1"
+                        disabled={isLoadingStatus}
+                      >
+                        {isLoadingStatus ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Play className="mr-2 h-4 w-4" />
+                        )}
+                        Start Bulk Import
+                      </Button>
+                    )}
                     <Button 
-                      onClick={handleStopBulkImport}
-                      className="w-full"
-                      variant="destructive"
+                      onClick={handleRefreshStatus}
+                      variant="ghost"
+                      size="icon"
+                      disabled={isLoadingStatus}
                     >
-                      <Pause className="mr-2 h-5 w-5" />
-                      Stop Import
+                      <RefreshCw className={`h-4 w-4 ${isLoadingStatus ? 'animate-spin' : ''}`} />
                     </Button>
-                  ) : (
-                    <Button 
-                      onClick={handleBulkImport}
-                      className="w-full"
-                      variant="default"
-                    >
-                      <Play className="mr-2 h-5 w-5" />
-                      Start Bulk Import (~350 steden)
-                    </Button>
-                  )}
+                  </div>
                   
                   <p className="text-xs text-muted-foreground">
-                    ⚠️ Dit kan ~5000+ API calls gebruiken. Max 5 restaurants per stad. Geschatte kosten: ~€85-100.
+                    ⚠️ Dit kan ~5000+ API calls gebruiken. Max 5 restaurants per stad. 
+                    De import draait door op de server, ook als je deze pagina verlaat.
                   </p>
                 </CardContent>
               </Card>

@@ -112,6 +112,51 @@ export type Database = {
           },
         ]
       }
+      import_jobs: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          errors: string[] | null
+          id: string
+          imported_restaurants: number
+          imported_reviews: number
+          processed_cities: number
+          skipped_restaurants: number
+          started_at: string | null
+          status: string
+          total_cities: number
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          errors?: string[] | null
+          id?: string
+          imported_restaurants?: number
+          imported_reviews?: number
+          processed_cities?: number
+          skipped_restaurants?: number
+          started_at?: string | null
+          status?: string
+          total_cities?: number
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          errors?: string[] | null
+          id?: string
+          imported_restaurants?: number
+          imported_reviews?: number
+          processed_cities?: number
+          skipped_restaurants?: number
+          started_at?: string | null
+          status?: string
+          total_cities?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
