@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, MapPin, Loader2, Building2, Utensils } from 'lucide-react';
+import { ArrowLeft, Download, MapPin, Loader2, Building2, Utensils, Globe, Play, Pause } from 'lucide-react';
 import { Layout } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Slider } from '@/components/ui/slider';
+import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -19,6 +20,12 @@ export default function AdminImportPage() {
   const [radius, setRadius] = useState(5000);
   const [isImporting, setIsImporting] = useState(false);
   const [isLinkingCuisines, setIsLinkingCuisines] = useState(false);
+  const [isBulkImporting, setIsBulkImporting] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState<{
+    processed: number;
+    total: number;
+    currentBatch: any[];
+  } | null>(null);
   const [importResult, setImportResult] = useState<{
     imported: string[];
     skipped: string[];
@@ -97,6 +104,59 @@ export default function AdminImportPage() {
     } finally {
       setIsLinkingCuisines(false);
     }
+  };
+
+  const handleBulkImport = async () => {
+    setIsBulkImporting(true);
+    setBulkProgress({ processed: 0, total: 50, currentBatch: [] });
+
+    let nextIndex: number | null = 0;
+    
+    while (nextIndex !== null && isBulkImporting) {
+      try {
+        const response = await supabase.functions.invoke('bulk-import-restaurants', {
+          body: {
+            startIndex: nextIndex,
+            batchSize: 3, // Process 3 cities at a time
+          },
+        });
+
+        if (response.error) {
+          throw new Error(response.error.message);
+        }
+
+        const result = response.data;
+        
+        setBulkProgress({
+          processed: result.processed,
+          total: result.totalCities,
+          currentBatch: result.results,
+        });
+
+        if (result.completed) {
+          toast.success('Alle steden zijn verwerkt!');
+          break;
+        }
+
+        nextIndex = result.nextIndex;
+        
+        // Small delay between batches
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+      } catch (error: unknown) {
+        console.error('Bulk import error:', error);
+        const errorMsg = error instanceof Error ? error.message : 'Er ging iets mis';
+        toast.error(errorMsg);
+        break;
+      }
+    }
+
+    setIsBulkImporting(false);
+  };
+
+  const handleStopBulkImport = () => {
+    setIsBulkImporting(false);
+    toast.info('Import wordt gestopt na huidige batch...');
   };
 
   if (authLoading || !user || !isAdmin()) return null;
@@ -230,6 +290,65 @@ export default function AdminImportPage() {
                       </>
                     )}
                   </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Globe className="h-5 w-5" />
+                    Bulk Import Nederland
+                  </CardTitle>
+                  <CardDescription>
+                    Importeer automatisch 5 restaurants per stad voor de 50 grootste steden van Nederland.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {bulkProgress && (
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span>Voortgang</span>
+                        <span>{bulkProgress.processed} / {bulkProgress.total} steden</span>
+                      </div>
+                      <Progress value={(bulkProgress.processed / bulkProgress.total) * 100} />
+                      
+                      {bulkProgress.currentBatch.length > 0 && (
+                        <div className="mt-3 text-sm text-muted-foreground">
+                          <p className="font-medium mb-1">Laatste batch:</p>
+                          {bulkProgress.currentBatch.map((item: any, i: number) => (
+                            <p key={i}>
+                              {item.city}: {item.imported} restaurants 
+                              {item.error && <span className="text-destructive"> ({item.error})</span>}
+                            </p>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
+                  {isBulkImporting ? (
+                    <Button 
+                      onClick={handleStopBulkImport}
+                      className="w-full"
+                      variant="destructive"
+                    >
+                      <Pause className="mr-2 h-5 w-5" />
+                      Stop Import
+                    </Button>
+                  ) : (
+                    <Button 
+                      onClick={handleBulkImport}
+                      className="w-full"
+                      variant="default"
+                    >
+                      <Play className="mr-2 h-5 w-5" />
+                      Start Bulk Import (50 steden)
+                    </Button>
+                  )}
+                  
+                  <p className="text-xs text-muted-foreground">
+                    ⚠️ Dit gebruikt veel Google API credits. Zorg dat je voldoende budget hebt.
+                  </p>
                 </CardContent>
               </Card>
 
