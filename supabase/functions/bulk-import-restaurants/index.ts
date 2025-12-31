@@ -461,32 +461,50 @@ async function runBackgroundImport(supabase: any, jobId: string, GOOGLE_API_KEY:
           cityId = newCity.id;
         }
 
-        // Search for restaurants in this city
-        const searchUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${cityData.lat},${cityData.lng}&radius=5000&type=restaurant&key=${GOOGLE_API_KEY}`;
-        
-        const searchResponse = await fetch(searchUrl);
-        const searchData = await searchResponse.json();
+        // Fetch all restaurants with pagination (up to 60 results)
+        const excludedTypes = ['lodging', 'hotel', 'bed_and_breakfast', 'guest_house', 'campground', 'rv_park', 'motel'];
+        const allRestaurants: any[] = [];
+        let nextPageToken: string | null = null;
+        let pageCount = 0;
+        const maxPages = 3; // Google returns max 20 per page, 3 pages = 60 results
 
-        if (searchData.status !== 'OK' || !searchData.results) {
-          console.log(`No results for ${cityData.name}: ${searchData.status}`);
+        do {
+          const searchUrl: string = nextPageToken 
+            ? `https://maps.googleapis.com/maps/api/place/nearbysearch/json?pagetoken=${nextPageToken}&key=${GOOGLE_API_KEY}`
+            : `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${cityData.lat},${cityData.lng}&radius=5000&type=restaurant&key=${GOOGLE_API_KEY}`;
+          
+          const searchResponse: Response = await fetch(searchUrl);
+          const searchData: any = await searchResponse.json();
+
+          if (searchData.status === 'OK' && searchData.results) {
+            // Filter out hotels/B&Bs and low-rated places
+            const filteredResults = searchData.results.filter((r: any) => {
+              if (r.rating && r.rating < 3.0) return false;
+              if (r.types && r.types.some((t: string) => excludedTypes.includes(t))) {
+                return false;
+              }
+              return true;
+            });
+            allRestaurants.push(...filteredResults);
+          }
+
+          nextPageToken = searchData.next_page_token || null;
+          pageCount++;
+
+          // Google requires a short delay before using next_page_token
+          if (nextPageToken && pageCount < maxPages) {
+            await new Promise(resolve => setTimeout(resolve, 2000));
+          }
+        } while (nextPageToken && pageCount < maxPages);
+
+        if (allRestaurants.length === 0) {
+          console.log(`No restaurants found for ${cityData.name}`);
           processedCities++;
           continue;
         }
 
-        // Excluded types (hotels, B&Bs, etc.)
-        const excludedTypes = ['lodging', 'hotel', 'bed_and_breakfast', 'guest_house', 'campground', 'rv_park', 'motel'];
-        
-        // Get top 5 restaurants by rating, excluding hotels/B&Bs
-        const topRestaurants = searchData.results
-          .filter((r: any) => {
-            if (r.rating < 3.5) return false;
-            if (r.types && r.types.some((t: string) => excludedTypes.includes(t))) {
-              return false;
-            }
-            return true;
-          })
-          .sort((a: any, b: any) => (b.rating || 0) - (a.rating || 0))
-          .slice(0, 5);
+        console.log(`Found ${allRestaurants.length} restaurants in ${cityData.name}`);
+        const topRestaurants = allRestaurants;
 
         for (const place of topRestaurants) {
           // Check if already exists
