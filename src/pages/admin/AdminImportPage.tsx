@@ -12,6 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import RestaurantMap from '@/components/maps/RestaurantMap';
+import { useRestaurants } from '@/hooks/useRestaurants';
 
 interface ImportJob {
   id: string;
@@ -38,6 +39,9 @@ interface ActivityLogEntry {
 export default function AdminImportPage() {
   const navigate = useNavigate();
   const { user, loading: authLoading, isAdmin } = useAuth();
+  
+  // Fetch all existing restaurants to show on map
+  const { data: existingRestaurants } = useRestaurants({});
   
   const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [radius, setRadius] = useState(5000);
@@ -396,6 +400,7 @@ export default function AdminImportPage() {
               </CardHeader>
               <CardContent>
                 <RestaurantMap
+                  restaurants={existingRestaurants?.restaurants || []}
                   zoom={8}
                   interactive
                   onLocationSelect={handleLocationSelect}
