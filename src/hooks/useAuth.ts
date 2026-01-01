@@ -34,18 +34,24 @@ export function useAuth() {
   }
 
   useEffect(() => {
+    let isMounted = true;
+    
     // Listener FIRST
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!isMounted) return;
+      
       setSession(session);
       setUser(session?.user ?? null);
-      setLoading(true);
 
       if (session?.user) {
         // IMPORTANT: defer any Supabase calls out of the callback
         setTimeout(() => {
-          loadUserData(session.user.id).finally(() => setLoading(false));
+          if (!isMounted) return;
+          loadUserData(session.user.id).finally(() => {
+            if (isMounted) setLoading(false);
+          });
         }, 0);
       } else {
         setProfile(null);
@@ -58,6 +64,8 @@ export function useAuth() {
     supabase.auth
       .getSession()
       .then(async ({ data: { session } }) => {
+        if (!isMounted) return;
+        
         setSession(session);
         setUser(session?.user ?? null);
 
@@ -68,9 +76,14 @@ export function useAuth() {
           setRoles([]);
         }
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signUp = async (email: string, password: string, displayName?: string) => {
