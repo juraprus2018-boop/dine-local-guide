@@ -12,7 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import RestaurantMap from '@/components/maps/RestaurantMap';
-import { useRestaurants } from '@/hooks/useRestaurants';
+import { useRestaurantLocations } from '@/hooks/useRestaurants';
 
 interface ImportJob {
   id: string;
@@ -40,8 +40,8 @@ export default function AdminImportPage() {
   const navigate = useNavigate();
   const { user, loading: authLoading, isAdmin } = useAuth();
   
-  // Fetch all existing restaurants to show on map
-  const { data: existingRestaurants } = useRestaurants({});
+  // Fetch all existing restaurant locations for map (lightweight query)
+  const { data: restaurantLocations, isLoading: locationsLoading } = useRestaurantLocations();
   
   const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [radius, setRadius] = useState(5000);
@@ -403,14 +403,28 @@ export default function AdminImportPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <RestaurantMap
-                  restaurants={existingRestaurants?.restaurants || []}
-                  zoom={8}
-                  interactive
-                  onLocationSelect={handleLocationSelect}
-                  selectedLocation={selectedLocation}
-                  className="h-[500px]"
-                />
+                {locationsLoading ? (
+                <div className="h-[500px] flex items-center justify-center bg-muted rounded-lg">
+                    <div className="text-center">
+                      <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+                      <p className="text-muted-foreground">Restaurants laden...</p>
+                    </div>
+                  </div>
+                ) : (
+                  <RestaurantMap
+                    restaurantLocations={restaurantLocations || []}
+                    zoom={8}
+                    interactive
+                    onLocationSelect={handleLocationSelect}
+                    selectedLocation={selectedLocation}
+                    className="h-[500px]"
+                  />
+                )}
+                {restaurantLocations && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    {restaurantLocations.length.toLocaleString()} restaurants op de kaart
+                  </p>
+                )}
               </CardContent>
             </Card>
 

@@ -392,3 +392,47 @@ export function useSearch(query: string) {
     enabled: query.length >= 2,
   });
 }
+
+// Fetch all restaurant locations for map display (lightweight - only coordinates)
+export function useRestaurantLocations() {
+  return useQuery({
+    queryKey: ['restaurantLocations'],
+    queryFn: async () => {
+      // Fetch in batches to get all restaurants
+      const allRestaurants: Array<{
+        id: string;
+        name: string;
+        latitude: number;
+        longitude: number;
+        slug: string;
+        city: { slug: string } | null;
+      }> = [];
+      
+      let page = 0;
+      const batchSize = 1000;
+      let hasMore = true;
+      
+      while (hasMore) {
+        const from = page * batchSize;
+        const to = from + batchSize - 1;
+        
+        const { data, error } = await supabase
+          .from('restaurants')
+          .select('id, name, latitude, longitude, slug, city:cities(slug)')
+          .range(from, to);
+        
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          allRestaurants.push(...data);
+          hasMore = data.length === batchSize;
+          page++;
+        } else {
+          hasMore = false;
+        }
+      }
+      
+      return allRestaurants;
+    },
+  });
+}

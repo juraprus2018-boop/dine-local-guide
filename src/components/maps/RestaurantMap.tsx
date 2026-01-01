@@ -32,8 +32,19 @@ const restaurantIcon = new L.Icon({
   shadowSize: [41, 41],
 });
 
+// Lightweight location type for map markers
+interface RestaurantLocation {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  slug: string;
+  city: { slug: string } | null;
+}
+
 interface RestaurantMapProps {
   restaurants?: Restaurant[];
+  restaurantLocations?: RestaurantLocation[];
   center?: [number, number];
   zoom?: number;
   onLocationSelect?: (lat: number, lng: number) => void;
@@ -69,6 +80,7 @@ function FlyToLocation({ location, zoom }: { location: { lat: number; lng: numbe
 
 const RestaurantMap: React.FC<RestaurantMapProps> = ({
   restaurants = [],
+  restaurantLocations = [],
   center = [52.2130, 5.2794], // Center of Netherlands
   zoom = 8,
   onLocationSelect,
@@ -76,6 +88,23 @@ const RestaurantMap: React.FC<RestaurantMapProps> = ({
   selectedLocation,
   className = 'h-[400px] w-full',
 }) => {
+  // Use restaurantLocations if provided, otherwise fall back to restaurants
+  const markers = restaurantLocations.length > 0 
+    ? restaurantLocations.map(loc => ({
+        id: loc.id,
+        name: loc.name,
+        latitude: loc.latitude,
+        longitude: loc.longitude,
+      }))
+    : restaurants.map(r => ({
+        id: r.id,
+        name: r.name,
+        latitude: r.latitude,
+        longitude: r.longitude,
+        address: r.address,
+        rating: r.rating,
+      }));
+
   return (
     <div className={`${className} rounded-lg overflow-hidden`}>
       <MapContainer
@@ -107,18 +136,20 @@ const RestaurantMap: React.FC<RestaurantMapProps> = ({
           </>
         )}
         
-        {restaurants.map((restaurant) => (
+        {markers.map((marker) => (
           <Marker
-            key={restaurant.id}
-            position={[restaurant.latitude, restaurant.longitude]}
+            key={marker.id}
+            position={[marker.latitude, marker.longitude]}
             icon={restaurantIcon}
           >
             <Popup>
               <div className="p-1">
-                <h3 className="font-semibold text-sm">{restaurant.name}</h3>
-                <p className="text-xs text-gray-600">{restaurant.address}</p>
-                {restaurant.rating && (
-                  <p className="text-xs text-amber-600 mt-1">★ {Number(restaurant.rating).toFixed(1)}</p>
+                <h3 className="font-semibold text-sm">{marker.name}</h3>
+                {'address' in marker && (marker as { address?: string }).address && (
+                  <p className="text-xs text-gray-600">{(marker as { address?: string }).address}</p>
+                )}
+                {'rating' in marker && (marker as { rating?: number }).rating && (
+                  <p className="text-xs text-amber-600 mt-1">★ {Number((marker as { rating?: number }).rating).toFixed(1)}</p>
                 )}
               </div>
             </Popup>
