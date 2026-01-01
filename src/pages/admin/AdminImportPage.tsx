@@ -227,7 +227,11 @@ export default function AdminImportPage() {
   }, [fetchJobStatus, currentJob?.status]);
 
   useEffect(() => {
-    if (!authLoading && (!user || !isAdmin())) {
+    // Wait for auth to fully load before checking admin status
+    if (authLoading) return;
+    
+    // Only redirect if we're certain the user is not an admin
+    if (!user || !isAdmin()) {
       navigate('/');
     }
   }, [user, authLoading, isAdmin, navigate]);
