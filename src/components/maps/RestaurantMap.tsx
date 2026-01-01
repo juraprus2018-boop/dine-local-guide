@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
+import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Restaurant } from '@/types/database';
@@ -136,25 +137,32 @@ const RestaurantMap: React.FC<RestaurantMapProps> = ({
           </>
         )}
         
-        {markers.map((marker) => (
-          <Marker
-            key={marker.id}
-            position={[marker.latitude, marker.longitude]}
-            icon={restaurantIcon}
-          >
-            <Popup>
-              <div className="p-1">
-                <h3 className="font-semibold text-sm">{marker.name}</h3>
-                {'address' in marker && (marker as { address?: string }).address && (
-                  <p className="text-xs text-gray-600">{(marker as { address?: string }).address}</p>
-                )}
-                {'rating' in marker && (marker as { rating?: number }).rating && (
-                  <p className="text-xs text-amber-600 mt-1">★ {Number((marker as { rating?: number }).rating).toFixed(1)}</p>
-                )}
-              </div>
-            </Popup>
-          </Marker>
-        ))}
+        <MarkerClusterGroup
+          chunkedLoading
+          maxClusterRadius={50}
+          spiderfyOnMaxZoom={true}
+          showCoverageOnHover={false}
+        >
+          {markers.map((marker) => (
+            <Marker
+              key={marker.id}
+              position={[marker.latitude, marker.longitude]}
+              icon={restaurantIcon}
+            >
+              <Popup>
+                <div className="p-1">
+                  <h3 className="font-semibold text-sm">{marker.name}</h3>
+                  {'address' in marker && (marker as { address?: string }).address && (
+                    <p className="text-xs text-gray-600">{(marker as { address?: string }).address}</p>
+                  )}
+                  {'rating' in marker && (marker as { rating?: number }).rating && (
+                    <p className="text-xs text-amber-600 mt-1">★ {Number((marker as { rating?: number }).rating).toFixed(1)}</p>
+                  )}
+                </div>
+              </Popup>
+            </Marker>
+          ))}
+        </MarkerClusterGroup>
       </MapContainer>
     </div>
   );
