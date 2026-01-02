@@ -123,6 +123,23 @@ export default function ReviewsPage() {
       return;
     }
 
+    // Validatie voor gasten
+    if (!user) {
+      if (!guestName.trim()) {
+        toast({ title: 'Vul je naam in', variant: 'destructive' });
+        return;
+      }
+      if (!guestEmail.trim()) {
+        toast({ title: 'Vul je email in', variant: 'destructive' });
+        return;
+      }
+    }
+
+    if (!reviewContent.trim()) {
+      toast({ title: 'Beschrijf je ervaring', variant: 'destructive' });
+      return;
+    }
+
     const restaurant = restaurants.find(r => r.id === selectedRestaurant);
     
     try {
@@ -262,7 +279,7 @@ export default function ReviewsPage() {
                   {!user && (
                     <div className="space-y-3">
                       <div>
-                        <Label htmlFor="guestName">Je naam</Label>
+                        <Label htmlFor="guestName">Je naam *</Label>
                         <Input
                           id="guestName"
                           value={guestName}
@@ -271,7 +288,7 @@ export default function ReviewsPage() {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="guestEmail">Je email</Label>
+                        <Label htmlFor="guestEmail">Je email *</Label>
                         <Input
                           id="guestEmail"
                           type="email"
@@ -296,13 +313,14 @@ export default function ReviewsPage() {
 
                   {/* Content */}
                   <div>
-                    <Label htmlFor="reviewContent">Je ervaring</Label>
+                    <Label htmlFor="reviewContent">Je ervaring *</Label>
                     <Textarea
                       id="reviewContent"
                       value={reviewContent}
                       onChange={(e) => setReviewContent(e.target.value)}
                       placeholder="Vertel over je bezoek..."
                       rows={4}
+                      required
                     />
                   </div>
 
