@@ -44,6 +44,7 @@ export default function CityPage() {
     minRating,
     sortBy,
     search: searchParams.get('q') || undefined,
+    limit: 1000,
   });
 
   const restaurants = restaurantsData?.restaurants || [];
