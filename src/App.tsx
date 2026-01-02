@@ -18,6 +18,7 @@ import NearbyPage from "./pages/NearbyPage";
 import SearchPage from "./pages/SearchPage";
 import ReviewsPage from "./pages/ReviewsPage";
 import FoodwallPage from "./pages/FoodwallPage";
+import RegisterRestaurantPage from "./pages/RegisterRestaurantPage";
 import AdminPage from "./pages/admin/AdminPage";
 import AdminRestaurantsPage from "./pages/admin/AdminRestaurantsPage";
 import AdminRestaurantEditPage from "./pages/admin/AdminRestaurantEditPage";
@@ -45,6 +46,7 @@ const App = () => (
             <Route path="/zoeken" element={<SearchPage />} />
             <Route path="/reviews" element={<ReviewsPage />} />
             <Route path="/foodwall" element={<FoodwallPage />} />
+            <Route path="/aanmelden" element={<RegisterRestaurantPage />} />
             <Route path="/favorieten" element={<FavoritesPage />} />
             <Route path="/profiel" element={<ProfilePage />} />
             <Route path="/admin" element={<AdminPage />} />
