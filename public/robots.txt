@@ -12,3 +12,15 @@ Allow: /
 
 User-agent: *
 Allow: /
+
+# Sitemap
+Sitemap: https://eoxcxesrejwbczhyjjsf.supabase.co/functions/v1/sitemap
+
+# Disallow admin and private pages
+Disallow: /admin/
+Disallow: /auth
+Disallow: /profiel
+Disallow: /favorieten
+
+# Crawl delay
+Crawl-delay: 1
