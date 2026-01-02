@@ -6,7 +6,7 @@ const supabaseUrl =
   process.env.VITE_SUPABASE_URL || "https://eoxcxesrejwbczhyjjsf.supabase.co";
 const supabaseKey =
   process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmN6aHlqanNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcxMjA3NDAsImV4cCI6MjA4MjY5Njc0MH0.SSzdDHB3G0vrMZ2SMUTx6YpeqASW3gBEcYb78dvE9MI";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVveGN4ZXNyZWp3YmN6aHlqanNmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcxMjA3NDAsImV4cCI6MjA4MjY5Njc0MH0.SSzdDHB3G0vrMZ2SMUTx6YpeqASW3gBEcYb78dvE9MI";
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
