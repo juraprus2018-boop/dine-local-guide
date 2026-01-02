@@ -32,6 +32,12 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    commonjsOptions: {
+      include: [/react-google-recaptcha/, /node_modules/],
+      transformMixedEsModules: true,
+    },
+  },
   optimizeDeps: {
     include: ['react-google-recaptcha'],
   },
