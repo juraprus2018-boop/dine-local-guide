@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, MapPin, Loader2, Building2, Utensils, Globe, Play, RefreshCw, CheckCircle, XCircle, Clock, Activity, Zap } from 'lucide-react';
+import { ArrowLeft, Download, MapPin, Loader2, Building2, Utensils, Globe, Play, RefreshCw, CheckCircle, XCircle, Clock, Activity, Zap, Camera } from 'lucide-react';
 import { Layout } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -47,6 +47,13 @@ export default function AdminImportPage() {
   const [radius, setRadius] = useState(5000);
   const [isImporting, setIsImporting] = useState(false);
   const [isLinkingCuisines, setIsLinkingCuisines] = useState(false);
+  const [isRefreshingPhotos, setIsRefreshingPhotos] = useState(false);
+  const [photoRefreshProgress, setPhotoRefreshProgress] = useState<{
+    processed: number;
+    total: number;
+    photosDownloaded: number;
+    errors: string[];
+  } | null>(null);
   const [currentJob, setCurrentJob] = useState<ImportJob | null>(null);
   const [isLoadingStatus, setIsLoadingStatus] = useState(false);
   const [activityLog, setActivityLog] = useState<ActivityLogEntry[]>([]);
@@ -303,6 +310,70 @@ export default function AdminImportPage() {
     }
   };
 
+  const handleRefreshPhotos = async () => {
+    setIsRefreshingPhotos(true);
+    setPhotoRefreshProgress({ processed: 0, total: 0, photosDownloaded: 0, errors: [] });
+    
+    let offset = 0;
+    const batchSize = 10;
+    let hasMore = true;
+    let totalProcessed = 0;
+    let totalPhotos = 0;
+    const allErrors: string[] = [];
+    let totalRestaurants = 0;
+
+    try {
+      while (hasMore) {
+        addLogEntry('info', `📸 Verwerken batch ${Math.floor(offset / batchSize) + 1}...`);
+        
+        const response = await supabase.functions.invoke('refresh-restaurant-photos', {
+          body: { batchSize, offset },
+        });
+
+        if (response.error) {
+          throw new Error(response.error.message);
+        }
+
+        const result = response.data;
+        totalProcessed += result.processed || 0;
+        totalPhotos += result.photosDownloaded || 0;
+        totalRestaurants = result.totalRestaurants || totalRestaurants;
+        
+        if (result.errors?.length > 0) {
+          allErrors.push(...result.errors);
+        }
+
+        setPhotoRefreshProgress({
+          processed: totalProcessed,
+          total: totalRestaurants,
+          photosDownloaded: totalPhotos,
+          errors: allErrors,
+        });
+
+        addLogEntry('restaurant', `📷 ${result.processed} restaurants, ${result.photosDownloaded} foto's`);
+
+        hasMore = result.hasMore || false;
+        offset = result.nextOffset || offset + batchSize;
+
+        // Small delay to prevent rate limiting
+        if (hasMore) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+
+      addLogEntry('info', `✅ Klaar! ${totalProcessed} restaurants, ${totalPhotos} foto's`);
+      toast.success(`Foto's vernieuwd: ${totalPhotos} foto's voor ${totalProcessed} restaurants`);
+      
+    } catch (error: unknown) {
+      console.error('Refresh photos error:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Er ging iets mis';
+      addLogEntry('error', `❌ Foto refresh mislukt: ${errorMsg}`);
+      toast.error(errorMsg);
+    } finally {
+      setIsRefreshingPhotos(false);
+    }
+  };
+
   const handleStartBulkImport = async () => {
     setIsLoadingStatus(true);
     setActivityLog([]); // Clear previous logs
@@ -512,6 +583,65 @@ export default function AdminImportPage() {
                       <>
                         <Utensils className="mr-2 h-5 w-5" />
                         Koppel Keukens aan Restaurants
+                      </>
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Camera className="h-5 w-5" />
+                    Foto's Vernieuwen
+                  </CardTitle>
+                  <CardDescription>
+                    Download alle foto's opnieuw via Google Places API voor alle restaurants.
+                    <strong className="block mt-1 text-amber-600">⚠️ Let op: dit kan lang duren en kost API credits!</strong>
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {photoRefreshProgress && (
+                    <div className="space-y-3 p-4 rounded-lg bg-muted">
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span>Voortgang</span>
+                          <span>{photoRefreshProgress.processed} / {photoRefreshProgress.total} restaurants</span>
+                        </div>
+                        <Progress 
+                          value={photoRefreshProgress.total > 0 
+                            ? (photoRefreshProgress.processed / photoRefreshProgress.total) * 100 
+                            : 0
+                          } 
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div className="p-2 rounded bg-green-500/10 text-green-700">
+                          <div className="font-medium">{photoRefreshProgress.photosDownloaded}</div>
+                          <div className="text-xs">Foto's gedownload</div>
+                        </div>
+                        <div className="p-2 rounded bg-red-500/10 text-red-700">
+                          <div className="font-medium">{photoRefreshProgress.errors.length}</div>
+                          <div className="text-xs">Fouten</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <Button 
+                    onClick={handleRefreshPhotos} 
+                    disabled={isRefreshingPhotos}
+                    className="w-full"
+                    variant="outline"
+                  >
+                    {isRefreshingPhotos ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Foto's downloaden...
+                      </>
+                    ) : (
+                      <>
+                        <Camera className="mr-2 h-5 w-5" />
+                        Vernieuw Alle Foto's
                       </>
                     )}
                   </Button>
