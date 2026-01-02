@@ -321,6 +321,62 @@ export type Database = {
           },
         ]
       }
+      photo_refresh_jobs: {
+        Row: {
+          completed_at: string | null
+          completed_restaurants: Json
+          created_at: string
+          errors: string[] | null
+          id: string
+          last_restaurant_id: string | null
+          last_restaurant_name: string | null
+          photos_downloaded: number
+          processed_restaurants: number
+          started_at: string | null
+          status: string
+          total_restaurants: number
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          completed_restaurants?: Json
+          created_at?: string
+          errors?: string[] | null
+          id?: string
+          last_restaurant_id?: string | null
+          last_restaurant_name?: string | null
+          photos_downloaded?: number
+          processed_restaurants?: number
+          started_at?: string | null
+          status?: string
+          total_restaurants?: number
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          completed_restaurants?: Json
+          created_at?: string
+          errors?: string[] | null
+          id?: string
+          last_restaurant_id?: string | null
+          last_restaurant_name?: string | null
+          photos_downloaded?: number
+          processed_restaurants?: number
+          started_at?: string | null
+          status?: string
+          total_restaurants?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "photo_refresh_jobs_last_restaurant_id_fkey"
+            columns: ["last_restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
