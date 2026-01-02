@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   MapPin, Phone, Globe, Clock, Star, Heart, Share2, 
   ChevronLeft, ChevronRight, ExternalLink, Check, X
@@ -17,10 +17,12 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useRestaurant, useReviews, useAddReview, useToggleFavorite, useIsFavorite } from '@/hooks/useRestaurants';
+import { useTrackPageView } from '@/hooks/usePageViews';
 import { cn } from '@/lib/utils';
 import { PhotoUpload } from '@/components/restaurants/PhotoUpload';
 import { ClaimButton } from '@/components/restaurants/ClaimButton';
 import { ReviewPhotoUpload } from '@/components/reviews/ReviewPhotoUpload';
+import { AdBlock } from '@/components/ads/AdBlock';
 import { supabase } from '@/integrations/supabase/client';
 import type { OpeningHours, DayHours } from '@/types/database';
 
@@ -94,6 +96,13 @@ export default function RestaurantPage() {
   const [reviewPhotos, setReviewPhotos] = useState<File[]>([]);
   const [guestName, setGuestName] = useState('');
   const [guestEmail, setGuestEmail] = useState('');
+
+  // Track page view when restaurant is loaded
+  useTrackPageView({ 
+    pageType: 'restaurant', 
+    pageSlug: restaurantSlug, 
+    restaurantId: restaurant?.id 
+  });
 
   if (isLoading) {
     return (
@@ -805,6 +814,9 @@ export default function RestaurantPage() {
                   </CardContent>
                 </Card>
               )}
+
+              {/* Advertisement */}
+              <AdBlock placementType="detail_sidebar" />
             </div>
           </div>
         </div>

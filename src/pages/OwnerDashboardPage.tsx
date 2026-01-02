@@ -5,7 +5,9 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Store, Star, MessageSquare, Camera, Settings, TrendingUp } from 'lucide-react';
+import { Store, Star, MessageSquare, Camera, Settings } from 'lucide-react';
+import { AnalyticsCard } from '@/components/dashboard/AnalyticsCard';
+import { AdManagementCard } from '@/components/dashboard/AdManagementCard';
 
 export default function OwnerDashboardPage() {
   const { user } = useAuth();
@@ -67,64 +69,67 @@ export default function OwnerDashboardPage() {
         ) : ownedRestaurants && ownedRestaurants.length > 0 ? (
           <div className="space-y-8">
             {ownedRestaurants.map((restaurant: any) => (
-              <Card key={restaurant.id}>
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="text-xl">{restaurant.name}</CardTitle>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {restaurant.address}, {restaurant.city?.name}
-                      </p>
+              <div key={restaurant.id} className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="text-xl">{restaurant.name}</CardTitle>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {restaurant.address}, {restaurant.city?.name}
+                        </p>
+                      </div>
+                      <Button asChild variant="outline" size="sm">
+                        <Link to={`/${restaurant.city?.slug}/${restaurant.slug}`}>
+                          Bekijk pagina
+                        </Link>
+                      </Button>
                     </div>
-                    <Button asChild variant="outline" size="sm">
-                      <Link to={`/${restaurant.city?.slug}/${restaurant.slug}`}>
-                        Bekijk pagina
-                      </Link>
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {/* Stats */}
-                  <div className="grid gap-4 sm:grid-cols-4 mb-6">
-                    <div className="bg-muted/50 rounded-lg p-4 text-center">
-                      <Star className="h-6 w-6 mx-auto text-warning mb-2" />
-                      <p className="text-2xl font-bold">{Number(restaurant.rating).toFixed(1)}</p>
-                      <p className="text-xs text-muted-foreground">Beoordeling</p>
+                  </CardHeader>
+                  <CardContent>
+                    {/* Stats */}
+                    <div className="grid gap-4 sm:grid-cols-3 mb-6">
+                      <div className="bg-muted/50 rounded-lg p-4 text-center">
+                        <Star className="h-6 w-6 mx-auto text-warning mb-2" />
+                        <p className="text-2xl font-bold">{Number(restaurant.rating).toFixed(1)}</p>
+                        <p className="text-xs text-muted-foreground">Beoordeling</p>
+                      </div>
+                      <div className="bg-muted/50 rounded-lg p-4 text-center">
+                        <MessageSquare className="h-6 w-6 mx-auto text-primary mb-2" />
+                        <p className="text-2xl font-bold">{restaurant.review_count}</p>
+                        <p className="text-xs text-muted-foreground">Reviews</p>
+                      </div>
+                      <div className="bg-muted/50 rounded-lg p-4 text-center">
+                        <Camera className="h-6 w-6 mx-auto text-accent mb-2" />
+                        <p className="text-2xl font-bold">-</p>
+                        <p className="text-xs text-muted-foreground">Foto's</p>
+                      </div>
                     </div>
-                    <div className="bg-muted/50 rounded-lg p-4 text-center">
-                      <MessageSquare className="h-6 w-6 mx-auto text-primary mb-2" />
-                      <p className="text-2xl font-bold">{restaurant.review_count}</p>
-                      <p className="text-xs text-muted-foreground">Reviews</p>
-                    </div>
-                    <div className="bg-muted/50 rounded-lg p-4 text-center">
-                      <TrendingUp className="h-6 w-6 mx-auto text-success mb-2" />
-                      <p className="text-2xl font-bold">-</p>
-                      <p className="text-xs text-muted-foreground">Weergaven</p>
-                    </div>
-                    <div className="bg-muted/50 rounded-lg p-4 text-center">
-                      <Camera className="h-6 w-6 mx-auto text-accent mb-2" />
-                      <p className="text-2xl font-bold">-</p>
-                      <p className="text-xs text-muted-foreground">Foto's</p>
-                    </div>
-                  </div>
 
-                  {/* Actions */}
-                  <div className="flex flex-wrap gap-2">
-                    <Button variant="outline" size="sm" className="gap-2">
-                      <Settings className="h-4 w-4" />
-                      Bewerk informatie
-                    </Button>
-                    <Button variant="outline" size="sm" className="gap-2">
-                      <Camera className="h-4 w-4" />
-                      Foto's beheren
-                    </Button>
-                    <Button variant="outline" size="sm" className="gap-2">
-                      <MessageSquare className="h-4 w-4" />
-                      Bekijk reviews
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                    {/* Actions */}
+                    <div className="flex flex-wrap gap-2">
+                      <Button variant="outline" size="sm" className="gap-2">
+                        <Settings className="h-4 w-4" />
+                        Bewerk informatie
+                      </Button>
+                      <Button variant="outline" size="sm" className="gap-2">
+                        <Camera className="h-4 w-4" />
+                        Foto's beheren
+                      </Button>
+                      <Button variant="outline" size="sm" className="gap-2">
+                        <MessageSquare className="h-4 w-4" />
+                        Bekijk reviews
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Analytics */}
+                <AnalyticsCard restaurantId={restaurant.id} restaurantName={restaurant.name} />
+
+                {/* Ad Management */}
+                <AdManagementCard restaurantId={restaurant.id} restaurantName={restaurant.name} />
+              </div>
             ))}
           </div>
         ) : (

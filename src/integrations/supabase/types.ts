@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      ad_placements: {
+        Row: {
+          ad_code: string | null
+          created_at: string
+          end_date: string | null
+          id: string
+          is_active: boolean
+          placement_type: string
+          restaurant_id: string | null
+          start_date: string | null
+          updated_at: string
+        }
+        Insert: {
+          ad_code?: string | null
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          placement_type: string
+          restaurant_id?: string | null
+          start_date?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ad_code?: string | null
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          is_active?: boolean
+          placement_type?: string
+          restaurant_id?: string | null
+          start_date?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_placements_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cities: {
         Row: {
           created_at: string
@@ -235,6 +279,47 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      page_views: {
+        Row: {
+          created_at: string
+          id: string
+          ip_hash: string | null
+          page_slug: string | null
+          page_type: string
+          referrer: string | null
+          restaurant_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          page_slug?: string | null
+          page_type: string
+          referrer?: string | null
+          restaurant_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          page_slug?: string | null
+          page_type?: string
+          referrer?: string | null
+          restaurant_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "page_views_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
