@@ -18,9 +18,30 @@ interface TrackPageViewParams {
   restaurantId?: string;
 }
 
+// Common bot user agent patterns to filter out
+const BOT_PATTERNS = [
+  /bot/i, /crawl/i, /spider/i, /scrape/i, /headless/i,
+  /googlebot/i, /bingbot/i, /yandex/i, /baiduspider/i,
+  /facebookexternalhit/i, /twitterbot/i, /linkedinbot/i,
+  /slurp/i, /duckduckbot/i, /semrush/i, /ahrefs/i,
+  /mj12bot/i, /dotbot/i, /petalbot/i, /bytespider/i,
+  /gptbot/i, /claudebot/i, /anthropic/i, /chatgpt/i,
+  /lighthouse/i, /pagespeed/i, /gtmetrix/i,
+  /pingdom/i, /uptimerobot/i, /statuscake/i,
+];
+
+function isBot(userAgent: string): boolean {
+  return BOT_PATTERNS.some(pattern => pattern.test(userAgent));
+}
+
 export function useTrackPageView({ pageType, pageSlug, restaurantId }: TrackPageViewParams) {
   useEffect(() => {
     const trackView = async () => {
+      // Don't track bots
+      if (isBot(navigator.userAgent)) {
+        return;
+      }
+
       try {
         // Create a session-based identifier (not persistent across sessions)
         const sessionId = sessionStorage.getItem('session_id') || crypto.randomUUID();

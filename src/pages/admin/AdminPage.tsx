@@ -16,12 +16,14 @@ export default function AdminPage() {
   const { data: stats } = useQuery({
     queryKey: ['admin-stats'],
     queryFn: async () => {
-      const [restaurants, cities, reviews, claims, pendingReviews] = await Promise.all([
+      const [restaurants, cities, reviews, claims, pendingReviews, activeAds, pageViews] = await Promise.all([
         supabase.from('restaurants').select('id', { count: 'exact', head: true }),
         supabase.from('cities').select('id', { count: 'exact', head: true }),
         supabase.from('reviews').select('id', { count: 'exact', head: true }),
         supabase.from('restaurant_claims').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('reviews').select('id', { count: 'exact', head: true }).eq('is_approved', false),
+        supabase.from('ad_placements').select('id', { count: 'exact', head: true }).eq('is_active', true),
+        supabase.from('page_views').select('id', { count: 'exact', head: true }),
       ]);
       return {
         restaurants: restaurants.count || 0,
@@ -29,6 +31,8 @@ export default function AdminPage() {
         reviews: reviews.count || 0,
         pendingClaims: claims.count || 0,
         pendingReviews: pendingReviews.count || 0,
+        activeAds: activeAds.count || 0,
+        totalPageViews: pageViews.count || 0,
       };
     },
     enabled: !!user && isAdmin(),
@@ -58,6 +62,8 @@ export default function AdminPage() {
     { label: 'Reviews', value: stats?.reviews ?? 0, icon: Star, href: '/admin/reviews' },
     { label: 'Pending Reviews', value: stats?.pendingReviews ?? 0, icon: MessageSquare, href: '/admin/reviews' },
     { label: 'Pending Claims', value: stats?.pendingClaims ?? 0, icon: FileCheck, href: '/admin/claims' },
+    { label: 'Actieve Ads', value: stats?.activeAds ?? 0, icon: Megaphone, href: '/admin/advertenties' },
+    { label: 'Paginaweergaven', value: stats?.totalPageViews ?? 0, icon: BarChart3, href: '/admin/analytics' },
   ];
 
   return (
