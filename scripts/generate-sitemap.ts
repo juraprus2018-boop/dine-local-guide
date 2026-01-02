@@ -45,21 +45,40 @@ async function generateSitemap() {
   console.log("🗺️  Generating sitemap index + per-city sitemaps...");
 
   try {
-    const [citiesResult, restaurantsResult] = await Promise.all([
-      supabase.from("cities").select("id, slug, updated_at").order("name").range(0, 9999),
-      supabase
+    const { data: cities, error: citiesError } = await supabase
+      .from("cities")
+      .select("id, slug, updated_at")
+      .order("name")
+      .range(0, 9999);
+
+    if (citiesError) throw citiesError;
+
+    // Fetch restaurants in batches (PostgREST caps responses at 1000 rows)
+    const restaurants: Array<{ slug: string; updated_at: string | null; city_id: string }> = [];
+    const batchSize = 1000;
+    let from = 0;
+
+    while (true) {
+      const to = from + batchSize - 1;
+
+      const { data, error } = await supabase
         .from("restaurants")
         .select("slug, updated_at, city_id")
         .not("city_id", "is", null)
         .order("name")
-        .range(0, 9999),
-    ]);
+        .range(from, to);
 
-    if (citiesResult.error) throw citiesResult.error;
-    if (restaurantsResult.error) throw restaurantsResult.error;
+      if (error) throw error;
 
-    const cities = citiesResult.data || [];
-    const restaurants = restaurantsResult.data || [];
+      const batch = (data || []) as Array<{ slug: string; updated_at: string | null; city_id: string }>;
+      restaurants.push(...batch);
+
+      if (batch.length < batchSize) break;
+      from += batchSize;
+    }
+
+
+    const citiesList = cities || [];
 
     mkdirSync(SITEMAPS_DIR, { recursive: true });
 
@@ -79,7 +98,7 @@ async function generateSitemap() {
     // Write per-city sitemaps + build sitemap index
     const sitemapIndexEntries: Array<{ loc: string; lastmod: string }> = [];
 
-    for (const city of cities as any[]) {
+    for (const city of citiesList as any[]) {
       const cityRestaurants = restaurantsByCityId.get(city.id) || [];
       const fileName = `sitemap-${city.slug}.xml`;
       const outPath = path.join(SITEMAPS_DIR, fileName);
