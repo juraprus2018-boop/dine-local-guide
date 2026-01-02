@@ -196,12 +196,18 @@ export default function ReviewsPage() {
       setReviewPhotos([]);
       setPhotoPreviews([]);
     } catch (error: any) {
+      const message =
+        error?.message ||
+        error?.error_description ||
+        (typeof error === 'string' ? error : JSON.stringify(error));
+
       console.error('Review submission error:', error);
-      toast({ 
-        title: 'Er ging iets mis', 
-        description: error?.message || 'Probeer het opnieuw', 
-        variant: 'destructive' 
+      toast({
+        title: 'Er ging iets mis',
+        description: message,
+        variant: 'destructive',
       });
+      sonnerToast.error(message);
     }
   };
 
