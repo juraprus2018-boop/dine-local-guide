@@ -10,7 +10,7 @@ const supabaseKey =
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const BASE_URL = "https://happio.nl";
+const BASE_URL = "https://www.happio.nl";
 const SITEMAPS_DIR = "public/sitemaps";
 
 function isoDate(dateLike?: string | null) {
@@ -46,12 +46,13 @@ async function generateSitemap() {
 
   try {
     const [citiesResult, restaurantsResult] = await Promise.all([
-      supabase.from("cities").select("id, slug, updated_at").order("name"),
+      supabase.from("cities").select("id, slug, updated_at").order("name").range(0, 9999),
       supabase
         .from("restaurants")
         .select("slug, updated_at, city_id")
         .not("city_id", "is", null)
-        .order("name"),
+        .order("name")
+        .range(0, 9999),
     ]);
 
     if (citiesResult.error) throw citiesResult.error;
