@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Layout } from '@/components/layout';
@@ -11,6 +11,8 @@ import { MapPin, Star, CheckCircle, Loader2, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
+import ReCaptcha, { ReCaptchaRef } from '@/components/ReCaptcha';
+import { verifyRecaptcha } from '@/hooks/useRecaptcha';
 
 export default function ClaimRestaurantPage() {
   const { citySlug, restaurantSlug } = useParams<{ citySlug?: string; restaurantSlug?: string }>();
@@ -20,6 +22,8 @@ export default function ClaimRestaurantPage() {
   const [businessEmail, setBusinessEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+  const recaptchaRef = useRef<ReCaptchaRef>(null);
 
   // Fetch the specific restaurant if we have slug params
   const { data: restaurant, isLoading } = useQuery({
@@ -48,6 +52,15 @@ export default function ClaimRestaurantPage() {
       if (!user) throw new Error('Je moet ingelogd zijn om een restaurant te claimen');
       if (!restaurant) throw new Error('Restaurant niet gevonden');
       if (!businessEmail) throw new Error('Zakelijk e-mailadres is verplicht');
+      if (!recaptchaToken) throw new Error('Bevestig dat je geen robot bent');
+
+      // Verify reCAPTCHA
+      const isValid = await verifyRecaptcha(recaptchaToken);
+      if (!isValid) {
+        recaptchaRef.current?.reset();
+        setRecaptchaToken(null);
+        throw new Error('reCAPTCHA verificatie mislukt. Probeer opnieuw.');
+      }
 
       const { error } = await supabase
         .from('restaurant_claims')
@@ -225,10 +238,16 @@ export default function ClaimRestaurantPage() {
                     />
                   </div>
 
+                  <ReCaptcha
+                    ref={recaptchaRef}
+                    onChange={setRecaptchaToken}
+                    className="flex justify-center"
+                  />
+
                   <Button
                     type="submit"
                     className="w-full"
-                    disabled={!businessEmail || claimMutation.isPending}
+                    disabled={!businessEmail || !recaptchaToken || claimMutation.isPending}
                   >
                     {claimMutation.isPending ? (
                       <>

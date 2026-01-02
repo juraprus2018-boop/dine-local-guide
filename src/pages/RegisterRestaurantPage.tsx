@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Layout } from '@/components/layout';
 import { Button } from '@/components/ui/button';
@@ -12,12 +12,16 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCities } from '@/hooks/useRestaurants';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import ReCaptcha, { ReCaptchaRef } from '@/components/ReCaptcha';
+import { verifyRecaptcha } from '@/hooks/useRecaptcha';
 
 export default function RegisterRestaurantPage() {
   const { user } = useAuth();
   const { data: cities } = useCities();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+  const recaptchaRef = useRef<ReCaptchaRef>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -45,7 +49,22 @@ export default function RegisterRestaurantPage() {
       return;
     }
 
+    if (!recaptchaToken) {
+      toast.error('Bevestig dat je geen robot bent');
+      return;
+    }
+
     setIsSubmitting(true);
+
+    // Verify reCAPTCHA
+    const isValid = await verifyRecaptcha(recaptchaToken);
+    if (!isValid) {
+      toast.error('reCAPTCHA verificatie mislukt. Probeer opnieuw.');
+      recaptchaRef.current?.reset();
+      setRecaptchaToken(null);
+      setIsSubmitting(false);
+      return;
+    }
 
     try {
       // Create a slug from the restaurant name
@@ -328,8 +347,14 @@ export default function RegisterRestaurantPage() {
                 </div>
               </div>
 
+              <ReCaptcha
+                ref={recaptchaRef}
+                onChange={setRecaptchaToken}
+                className="flex justify-center"
+              />
+
               <div className="pt-4 border-t">
-                <Button type="submit" size="lg" className="w-full" disabled={isSubmitting}>
+                <Button type="submit" size="lg" className="w-full" disabled={isSubmitting || !recaptchaToken}>
                   {isSubmitting ? 'Bezig met aanmelden...' : 'Restaurant aanmelden'}
                 </Button>
                 <p className="text-xs text-muted-foreground text-center mt-4">
