@@ -23,6 +23,7 @@ interface FoodPost {
   id: string;
   user_id: string | null;
   guest_name: string | null;
+  guest_email: string | null;
   restaurant_id: string | null;
   image_url: string;
   caption: string | null;
@@ -279,6 +280,7 @@ function CreatePostDialog({ onSuccess }: { onSuccess: () => void }) {
   const [preview, setPreview] = useState<string | null>(null);
   const [caption, setCaption] = useState('');
   const [guestName, setGuestName] = useState('');
+  const [guestEmail, setGuestEmail] = useState('');
   const [selectedRestaurant, setSelectedRestaurant] = useState<{ id: string; name: string } | null>(null);
   const [restaurantSearch, setRestaurantSearch] = useState('');
   const [restaurantPopoverOpen, setRestaurantPopoverOpen] = useState(false);
@@ -327,9 +329,13 @@ function CreatePostDialog({ onSuccess }: { onSuccess: () => void }) {
   const handleSubmit = async () => {
     if (!selectedFile) return;
     
-    // Require guest name if not logged in
+    // Require guest name and email if not logged in
     if (!user && !guestName.trim()) {
       toast.error('Vul je naam in');
+      return;
+    }
+    if (!user && !guestEmail.trim()) {
+      toast.error('Vul je email in');
       return;
     }
 
@@ -359,6 +365,7 @@ function CreatePostDialog({ onSuccess }: { onSuccess: () => void }) {
         .insert({
           user_id: user?.id || null,
           guest_name: user ? null : guestName.trim(),
+          guest_email: user ? null : guestEmail.trim(),
           image_url: publicUrl,
           caption: caption || null,
           restaurant_id: selectedRestaurant?.id || null,
@@ -423,15 +430,28 @@ function CreatePostDialog({ onSuccess }: { onSuccess: () => void }) {
 
         {/* Guest name (only for non-logged in users) */}
         {!user && (
-          <div className="space-y-2">
-            <Label htmlFor="guestName">Je naam *</Label>
-            <Input
-              id="guestName"
-              placeholder="Hoe mogen we je noemen?"
-              value={guestName}
-              onChange={(e) => setGuestName(e.target.value)}
-              maxLength={50}
-            />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="guestName">Je naam *</Label>
+              <Input
+                id="guestName"
+                placeholder="Hoe mogen we je noemen?"
+                value={guestName}
+                onChange={(e) => setGuestName(e.target.value)}
+                maxLength={50}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="guestEmail">Je email *</Label>
+              <Input
+                id="guestEmail"
+                type="email"
+                placeholder="je@email.nl"
+                value={guestEmail}
+                onChange={(e) => setGuestEmail(e.target.value)}
+                maxLength={100}
+              />
+            </div>
           </div>
         )}
 

@@ -164,8 +164,8 @@ export default function RestaurantPage() {
         city_name: restaurant.city?.name,
       });
 
-      // Upload photos if any and user is logged in
-      if (reviewPhotos.length > 0 && user && result?.id) {
+      // Upload photos if any
+      if (reviewPhotos.length > 0 && result?.id) {
         for (const photo of reviewPhotos) {
           const fileExt = photo.name.split('.').pop();
           const fileName = `reviews/${result.id}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
@@ -184,7 +184,8 @@ export default function RestaurantPage() {
 
             await supabase.from('review_photos').insert({
               review_id: result.id,
-              user_id: user.id,
+              user_id: user?.id || null,
+              guest_email: user ? null : guestEmail,
               url: publicUrl,
             });
           }
@@ -505,20 +506,18 @@ export default function RestaurantPage() {
                           />
                         </div>
 
-                        {/* Photo upload - only for logged in users */}
-                        {user && (
-                          <div>
-                            <Label>Foto's toevoegen (optioneel)</Label>
-                            <div className="mt-2">
-                              <ReviewPhotoUpload
-                                photos={reviewPhotos}
-                                onPhotosChange={setReviewPhotos}
-                                maxPhotos={4}
-                                disabled={addReview.isPending}
-                              />
-                            </div>
+                        {/* Photo upload */}
+                        <div>
+                          <Label>Foto's toevoegen (optioneel)</Label>
+                          <div className="mt-2">
+                            <ReviewPhotoUpload
+                              photos={reviewPhotos}
+                              onPhotosChange={setReviewPhotos}
+                              maxPhotos={4}
+                              disabled={addReview.isPending}
+                            />
                           </div>
-                        )}
+                        </div>
 
                         <Button type="submit" disabled={addReview.isPending}>
                           {addReview.isPending ? 'Bezig...' : 'Review plaatsen'}

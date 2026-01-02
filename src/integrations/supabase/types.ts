@@ -145,6 +145,7 @@ export type Database = {
         Row: {
           caption: string | null
           created_at: string
+          guest_email: string | null
           guest_name: string | null
           id: string
           image_url: string
@@ -156,6 +157,7 @@ export type Database = {
         Insert: {
           caption?: string | null
           created_at?: string
+          guest_email?: string | null
           guest_name?: string | null
           id?: string
           image_url: string
@@ -167,6 +169,7 @@ export type Database = {
         Update: {
           caption?: string | null
           created_at?: string
+          guest_email?: string | null
           guest_name?: string | null
           id?: string
           image_url?: string
@@ -491,24 +494,27 @@ export type Database = {
       review_photos: {
         Row: {
           created_at: string
+          guest_email: string | null
           id: string
           review_id: string
           url: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string
+          guest_email?: string | null
           id?: string
           review_id: string
           url: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string
+          guest_email?: string | null
           id?: string
           review_id?: string
           url?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
