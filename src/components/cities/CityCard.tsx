@@ -3,6 +3,7 @@ import { MapPin } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import type { City } from '@/types/database';
+import placeholderCity from '@/assets/placeholder-city.jpg';
 
 interface CityCardProps {
   city: City;
@@ -10,20 +11,8 @@ interface CityCardProps {
   className?: string;
 }
 
-// Default city images from Unsplash
-const cityImages: Record<string, string> = {
-  amsterdam: 'https://images.unsplash.com/photo-1534351590666-13e3e96b5017?w=400&h=300&fit=crop',
-  rotterdam: 'https://images.unsplash.com/photo-1543269664-76bc3997d9ea?w=400&h=300&fit=crop',
-  'den-haag': 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=400&h=300&fit=crop',
-  utrecht: 'https://images.unsplash.com/photo-1579616043939-66feae7e9df2?w=400&h=300&fit=crop',
-  eindhoven: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop',
-  groningen: 'https://images.unsplash.com/photo-1600623471616-8c1966c91ff6?w=400&h=300&fit=crop',
-  maastricht: 'https://images.unsplash.com/photo-1600952841320-db92ec4047ca?w=400&h=300&fit=crop',
-  default: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=400&h=300&fit=crop',
-};
-
 export function CityCard({ city, restaurantCount, className }: CityCardProps) {
-  const imageUrl = city.image_url || cityImages[city.slug] || cityImages.default;
+  const imageUrl = city.image_url || placeholderCity;
 
   return (
     <Link to={`/${city.slug}`}>
