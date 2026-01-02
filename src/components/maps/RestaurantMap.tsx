@@ -1,8 +1,29 @@
 import React, { useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
-import L from 'leaflet';
+import L, { DivIcon } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+
+// Custom cluster icon creator
+const createClusterCustomIcon = (cluster: any): DivIcon => {
+  const count = cluster.getChildCount();
+  let size = 'small';
+  let dimensions = 36;
+  
+  if (count >= 100) {
+    size = 'large';
+    dimensions = 50;
+  } else if (count >= 10) {
+    size = 'medium';
+    dimensions = 42;
+  }
+  
+  return new L.DivIcon({
+    html: `<div class="cluster-marker cluster-${size}"><span>${count}</span></div>`,
+    className: 'custom-cluster-icon',
+    iconSize: new L.Point(dimensions, dimensions, true),
+  });
+};
 import { Restaurant } from '@/types/database';
 
 // Fix default marker icons
@@ -142,6 +163,7 @@ const RestaurantMap: React.FC<RestaurantMapProps> = ({
           maxClusterRadius={50}
           spiderfyOnMaxZoom={true}
           showCoverageOnHover={false}
+          iconCreateFunction={createClusterCustomIcon}
         >
           {markers.map((marker) => (
             <Marker
