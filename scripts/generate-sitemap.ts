@@ -11,7 +11,7 @@ const supabaseKey =
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const BASE_URL = "https://www.happio.nl";
-const SITEMAPS_DIR = "public/sitemaps";
+const SITEMAPS_DIR = "dist/sitemaps";
 
 function isoDate(dateLike?: string | null) {
   if (!dateLike) return new Date().toISOString().split("T")[0];
@@ -138,10 +138,10 @@ async function generateSitemap() {
       .join("")}
 </sitemapindex>`;
 
-    writeFileSync("public/sitemap.xml", sitemapIndex);
+    writeFileSync("dist/sitemap.xml", sitemapIndex);
 
     console.log(
-      `✅ Generated sitemap.xml (index) + ${sitemapIndexEntries.length} city sitemaps in /public/sitemaps/`
+      `✅ Generated sitemap.xml (index) + ${sitemapIndexEntries.length} city sitemaps in /dist/sitemaps/`
     );
   } catch (error) {
     console.error("❌ Error generating sitemap:", error);
