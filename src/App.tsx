@@ -25,6 +25,7 @@ import AdminRestaurantEditPage from "./pages/admin/AdminRestaurantEditPage";
 import AdminImportPage from "./pages/admin/AdminImportPage";
 import AdminClaimsPage from "./pages/admin/AdminClaimsPage";
 import AdminReviewsPage from "./pages/admin/AdminReviewsPage";
+import { ScrollToTop } from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <ScrollToTop />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<AuthPage />} />
