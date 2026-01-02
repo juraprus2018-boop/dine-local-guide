@@ -26,7 +26,7 @@ export function Layout({
   noIndex = false,
 }: LayoutProps) {
   const location = useLocation();
-  const baseUrl = 'https://happio.nl';
+  const baseUrl = 'https://www.happio.nl';
   const canonicalUrl = `${baseUrl}${location.pathname}`;
   
   const pageTitle = title ? `${title} | Happio` : 'Happio - Ontdek de beste restaurants in Nederland';
