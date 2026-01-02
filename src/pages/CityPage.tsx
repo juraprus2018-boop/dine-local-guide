@@ -7,6 +7,7 @@ import { SearchBar } from '@/components/search/SearchBar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { AdBlock } from '@/components/ads/AdBlock';
 import {
   Sheet,
   SheetContent,
@@ -22,6 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useCity, useRestaurants, useCuisines } from '@/hooks/useRestaurants';
+import { useTrackPageView } from '@/hooks/usePageViews';
 import type { PriceRange } from '@/types/database';
 
 const priceRangeOptions: PriceRange[] = ['€', '€€', '€€€', '€€€€'];
@@ -46,6 +48,9 @@ export default function CityPage() {
     search: searchParams.get('q') || undefined,
     limit: 1000,
   });
+
+  // Track page view
+  useTrackPageView({ pageType: 'city', pageSlug: citySlug });
 
   const restaurants = restaurantsData?.restaurants || [];
 
@@ -349,6 +354,11 @@ export default function CityPage() {
               )}
             </div>
           )}
+
+          {/* Advertisement Block */}
+          <div className="mt-8">
+            <AdBlock placementType="city" />
+          </div>
         </div>
       </section>
     </Layout>

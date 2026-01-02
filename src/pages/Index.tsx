@@ -4,10 +4,15 @@ import { PopularCitiesSection } from '@/components/home/PopularCitiesSection';
 import { TopRatedSection } from '@/components/home/TopRatedSection';
 import { CuisinesSection } from '@/components/home/CuisinesSection';
 import { CTASection } from '@/components/home/CTASection';
+import { AdBlock } from '@/components/ads/AdBlock';
 import { useCuisines, useRestaurants } from '@/hooks/useRestaurants';
 import { usePopularCities } from '@/hooks/usePopularCities';
+import { useTrackPageView } from '@/hooks/usePageViews';
 
 export default function Index() {
+  // Track page view
+  useTrackPageView({ pageType: 'home' });
+
   const { data: popularCities, isLoading: citiesLoading } = usePopularCities(6);
   const { data: cuisines, isLoading: cuisinesLoading } = useCuisines();
   
@@ -79,6 +84,13 @@ export default function Index() {
         cuisines={featuredCuisines}
         isLoading={cuisinesLoading}
       />
+
+      {/* Advertisement Block */}
+      <section className="py-8">
+        <div className="container-wide">
+          <AdBlock placementType="homepage" />
+        </div>
+      </section>
 
       <CTASection />
     </Layout>
