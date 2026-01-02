@@ -20,8 +20,39 @@ export default function Index() {
   const featuredCuisines = cuisines?.slice(0, 10) || [];
   const topRestaurants = restaurantsData?.restaurants || [];
 
+  // Homepage JSON-LD
+  const homepageJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    "name": "Happio - Ontdek de beste restaurants in Nederland",
+    "description": "Vind en ontdek de beste restaurants, cafés en eetgelegenheden in jouw stad.",
+    "url": "https://happio.nl/",
+    "mainEntity": {
+      "@type": "ItemList",
+      "name": "Populaire restaurants",
+      "numberOfItems": topRestaurants.length,
+      "itemListElement": topRestaurants.slice(0, 5).map((r, i) => ({
+        "@type": "ListItem",
+        "position": i + 1,
+        "item": {
+          "@type": "Restaurant",
+          "name": r.name,
+          "aggregateRating": r.rating ? {
+            "@type": "AggregateRating",
+            "ratingValue": Number(r.rating).toFixed(1),
+            "reviewCount": r.review_count
+          } : undefined
+        }
+      }))
+    }
+  };
+
   return (
-    <Layout>
+    <Layout
+      title="Ontdek de beste restaurants in Nederland"
+      description="Vind en ontdek de beste restaurants, cafés en eetgelegenheden in jouw stad. Lees reviews, bekijk foto's en vind jouw perfecte eetplek met Happio."
+      jsonLd={homepageJsonLd}
+    >
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-b from-secondary/50 to-background pb-16 pt-12 md:pb-24 md:pt-20">
         <div className="container-wide">

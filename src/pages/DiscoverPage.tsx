@@ -16,10 +16,29 @@ export default function DiscoverPage() {
     return acc;
   }, {} as Record<string, typeof cities>);
 
+  // Discover page JSON-LD
+  const discoverJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": "Restaurants in Nederlandse steden",
+    "description": "Ontdek restaurants in alle steden van Nederland",
+    "numberOfItems": cities?.length || 0,
+    "itemListElement": cities?.slice(0, 10).map((city, i) => ({
+      "@type": "ListItem",
+      "position": i + 1,
+      "item": {
+        "@type": "City",
+        "name": city.name,
+        "url": `https://happio.nl/${city.slug}`
+      }
+    })) || []
+  };
+
   return (
     <Layout
       title="Ontdek restaurants in Nederland"
-      description="Vind de beste restaurants in alle steden van Nederland. Van Amsterdam tot Maastricht, ontdek waar je lekker kunt eten."
+      description="Vind de beste restaurants in alle steden van Nederland. Van Amsterdam tot Maastricht, ontdek meer dan 1000 eetgelegenheden."
+      jsonLd={discoverJsonLd}
     >
       {/* Hero */}
       <section className="bg-gradient-to-b from-secondary/50 to-background py-8 md:py-12">

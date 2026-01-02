@@ -177,10 +177,81 @@ export default function RestaurantPage() {
 
   const isOpen = isOpenNow(restaurant.opening_hours);
 
+  // Restaurant JSON-LD structured data
+  const restaurantJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Restaurant",
+    "name": restaurant.name,
+    "description": restaurant.description || `${restaurant.name} in ${restaurant.city?.name}`,
+    "url": `https://happio.nl/${citySlug}/${restaurantSlug}`,
+    "image": photos[0]?.url || restaurant.image_url,
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": restaurant.address,
+      "postalCode": restaurant.postal_code,
+      "addressLocality": restaurant.city?.name,
+      "addressCountry": "NL"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": restaurant.latitude,
+      "longitude": restaurant.longitude
+    },
+    "telephone": restaurant.phone || undefined,
+    "priceRange": restaurant.price_range || undefined,
+    "servesCuisine": restaurant.cuisines?.map(c => c.name) || undefined,
+    ...(restaurant.rating && restaurant.review_count && restaurant.review_count > 0 ? {
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": Number(restaurant.rating).toFixed(1),
+        "reviewCount": restaurant.review_count,
+        "bestRating": 5,
+        "worstRating": 1
+      }
+    } : {}),
+    ...(restaurant.opening_hours ? {
+      "openingHoursSpecification": Object.entries(restaurant.opening_hours).map(([day, hours]) => ({
+        "@type": "OpeningHoursSpecification",
+        "dayOfWeek": day.charAt(0).toUpperCase() + day.slice(1),
+        "opens": hours?.closed ? undefined : hours?.open,
+        "closes": hours?.closed ? undefined : hours?.close
+      })).filter(spec => spec.opens)
+    } : {})
+  };
+
+  // BreadcrumbList JSON-LD
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://happio.nl/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": restaurant.city?.name,
+        "item": `https://happio.nl/${citySlug}`
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": restaurant.name,
+        "item": `https://happio.nl/${citySlug}/${restaurantSlug}`
+      }
+    ]
+  };
+
   return (
     <Layout
-      title={restaurant.name}
-      description={restaurant.meta_description || `${restaurant.name} in ${restaurant.city?.name}. Bekijk reviews, foto's en openingstijden.`}
+      title={`${restaurant.name} - ${restaurant.city?.name}`}
+      description={restaurant.meta_description || `${restaurant.name} in ${restaurant.city?.name}. Bekijk reviews, foto's, openingstijden en menu. ${restaurant.rating ? `Beoordeling: ${Number(restaurant.rating).toFixed(1)}/5` : ''}`}
+      image={photos[0]?.url || restaurant.image_url}
+      type="restaurant"
+      jsonLd={[restaurantJsonLd, breadcrumbJsonLd]}
     >
       {/* Breadcrumb */}
       <div className="bg-muted/30 border-b">
