@@ -20,13 +20,37 @@ export default function CuisinesPage() {
 
   const restaurants = restaurantsData?.restaurants || [];
 
+  // Cuisine JSON-LD
+  const cuisineJsonLd = selectedCuisine ? {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": `${selectedCuisine.name} restaurants in Nederland`,
+    "description": `Ontdek de beste ${selectedCuisine.name.toLowerCase()} restaurants`,
+    "numberOfItems": restaurants.length,
+    "itemListElement": restaurants.slice(0, 10).map((r, i) => ({
+      "@type": "ListItem",
+      "position": i + 1,
+      "item": {
+        "@type": "Restaurant",
+        "name": r.name,
+        "servesCuisine": selectedCuisine.name
+      }
+    }))
+  } : {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": "Alle keukens in Nederland",
+    "numberOfItems": cuisines?.length || 0
+  };
+
   return (
     <Layout
-      title={selectedCuisine ? `${selectedCuisine.name} restaurants` : 'Alle keukens'}
+      title={selectedCuisine ? `${selectedCuisine.name} restaurants in Nederland` : 'Alle keukens'}
       description={selectedCuisine 
-        ? `Ontdek de beste ${selectedCuisine.name.toLowerCase()} restaurants in Nederland`
-        : 'Ontdek alle keukens en cuisines in Nederland. Van Italiaans tot Indonesisch.'
+        ? `Ontdek de ${restaurants.length} beste ${selectedCuisine.name.toLowerCase()} restaurants in Nederland. Lees reviews en vind jouw favoriet.`
+        : 'Ontdek alle keukens en cuisines in Nederland. Van Italiaans tot Indonesisch, vind het restaurant dat bij jou past.'
       }
+      jsonLd={cuisineJsonLd}
     >
       {/* Hero */}
       <section className="bg-gradient-to-b from-secondary/50 to-background py-8 md:py-12">

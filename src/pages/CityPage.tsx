@@ -89,10 +89,64 @@ export default function CityPage() {
     );
   }
 
+  // City JSON-LD structured data
+  const cityJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": `Restaurants in ${city.name}`,
+    "description": city.meta_description || `Ontdek de beste restaurants in ${city.name}`,
+    "url": `https://happio.nl/${city.slug}`,
+    "numberOfItems": restaurants.length,
+    "itemListElement": restaurants.slice(0, 10).map((r, i) => ({
+      "@type": "ListItem",
+      "position": i + 1,
+      "item": {
+        "@type": "Restaurant",
+        "name": r.name,
+        "url": `https://happio.nl/${city.slug}/${r.slug}`,
+        ...(r.rating ? {
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": Number(r.rating).toFixed(1),
+            "reviewCount": r.review_count || 0
+          }
+        } : {})
+      }
+    }))
+  };
+
+  // BreadcrumbList JSON-LD
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "https://happio.nl/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": "Steden",
+        "item": "https://happio.nl/ontdek"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": city.name,
+        "item": `https://happio.nl/${city.slug}`
+      }
+    ]
+  };
+
   return (
     <Layout
-      title={`Restaurants in ${city.name}`}
-      description={city.meta_description || `Ontdek de beste restaurants in ${city.name}. Lees reviews, bekijk foto's en vind jouw perfecte eetplek.`}
+      title={`Restaurants in ${city.name} - ${city.province}`}
+      description={city.meta_description || `Ontdek de ${restaurants.length} beste restaurants in ${city.name}, ${city.province}. Lees reviews, bekijk foto's en vind jouw perfecte eetplek.`}
+      image={city.image_url || undefined}
+      jsonLd={[cityJsonLd, breadcrumbJsonLd]}
     >
       {/* Hero */}
       <section className="bg-gradient-to-b from-secondary/50 to-background py-8 md:py-12">

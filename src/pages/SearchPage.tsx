@@ -40,8 +40,12 @@ export default function SearchPage() {
 
   return (
     <Layout
-      title="Zoeken"
-      description="Zoek naar restaurants, steden of keukens in heel Nederland"
+      title={debouncedQuery ? `Zoeken: ${debouncedQuery}` : 'Zoek restaurants'}
+      description={debouncedQuery 
+        ? `Zoekresultaten voor "${debouncedQuery}" - Vind restaurants, steden en keukens in Nederland`
+        : 'Zoek naar restaurants, steden of keukens in heel Nederland. Vind jouw perfecte eetplek.'
+      }
+      noIndex={true}
     >
       {/* Search Header */}
       <section className="bg-gradient-to-b from-secondary/50 to-background py-12">
