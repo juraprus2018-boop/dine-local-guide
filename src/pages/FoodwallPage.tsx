@@ -290,6 +290,11 @@ function CreatePostDialog({ onSuccess }: { onSuccess: () => void }) {
   const [restaurantPopoverOpen, setRestaurantPopoverOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
+  // Guard: don't render if not authenticated
+  if (!user) {
+    return null;
+  }
+
   // Search restaurants
   const { data: restaurants } = useQuery({
     queryKey: ['restaurant-search', restaurantSearch],
