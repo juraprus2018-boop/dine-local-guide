@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Star, MessageSquare, Search } from 'lucide-react';
+import { Star, MessageSquare, Search, Camera, X } from 'lucide-react';
 import { Layout } from '@/components/layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -15,6 +15,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useRestaurants, useAddReview } from '@/hooks/useRestaurants';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { toast as sonnerToast } from 'sonner';
 
 function RatingStars({ rating, size = 'md' }: { rating: number; size?: 'sm' | 'md' }) {
   const sizes = { sm: 'h-3 w-3', md: 'h-4 w-4' };
@@ -70,6 +71,44 @@ export default function ReviewsPage() {
   const [guestName, setGuestName] = useState('');
   const [guestEmail, setGuestEmail] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [reviewPhotos, setReviewPhotos] = useState<File[]>([]);
+  const [photoPreviews, setPhotoPreviews] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const validFiles = files.filter(file => {
+      if (file.size > 10 * 1024 * 1024) {
+        sonnerToast.error(`${file.name} is te groot (max 10MB)`);
+        return false;
+      }
+      if (!file.type.startsWith('image/')) {
+        sonnerToast.error(`${file.name} is geen afbeelding`);
+        return false;
+      }
+      return true;
+    });
+
+    if (reviewPhotos.length + validFiles.length > 5) {
+      sonnerToast.error('Maximaal 5 foto\'s toegestaan');
+      return;
+    }
+
+    setReviewPhotos(prev => [...prev, ...validFiles]);
+    
+    validFiles.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreviews(prev => [...prev, reader.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const removePhoto = (index: number) => {
+    setReviewPhotos(prev => prev.filter((_, i) => i !== index));
+    setPhotoPreviews(prev => prev.filter((_, i) => i !== index));
+  };
 
   const restaurants = restaurantsData?.restaurants || [];
   const filteredRestaurants = restaurants.filter(r => 
@@ -87,7 +126,7 @@ export default function ReviewsPage() {
     const restaurant = restaurants.find(r => r.id === selectedRestaurant);
     
     try {
-      await addReview.mutateAsync({
+      const result = await addReview.mutateAsync({
         restaurant_id: selectedRestaurant,
         rating: reviewRating,
         title: reviewTitle || undefined,
@@ -98,6 +137,34 @@ export default function ReviewsPage() {
         restaurant_name: restaurant?.name,
         city_name: restaurant?.city?.name,
       });
+
+      // Upload photos if any
+      if (reviewPhotos.length > 0 && result?.id) {
+        for (const photo of reviewPhotos) {
+          const fileExt = photo.name.split('.').pop();
+          const fileName = `reviews/${result.id}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from('restaurant-photos')
+            .upload(fileName, photo, {
+              cacheControl: '3600',
+              upsert: false,
+            });
+
+          if (!uploadError) {
+            const { data: { publicUrl } } = supabase.storage
+              .from('restaurant-photos')
+              .getPublicUrl(fileName);
+
+            await supabase.from('review_photos').insert({
+              review_id: result.id,
+              user_id: user?.id || null,
+              guest_email: user ? null : guestEmail,
+              url: publicUrl,
+            });
+          }
+        }
+      }
       
       toast({ 
         title: 'Review ontvangen! 📝',
@@ -109,6 +176,8 @@ export default function ReviewsPage() {
       setReviewContent('');
       setGuestName('');
       setGuestEmail('');
+      setReviewPhotos([]);
+      setPhotoPreviews([]);
     } catch (error) {
       toast({ title: 'Er ging iets mis', variant: 'destructive' });
     }
@@ -235,6 +304,55 @@ export default function ReviewsPage() {
                       placeholder="Vertel over je bezoek..."
                       rows={4}
                     />
+                  </div>
+
+                  {/* Photo Upload */}
+                  <div>
+                    <Label>Foto's toevoegen (optioneel)</Label>
+                    <div className="mt-2">
+                      {photoPreviews.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {photoPreviews.map((preview, index) => (
+                            <div key={index} className="relative">
+                              <img
+                                src={preview}
+                                alt={`Preview ${index + 1}`}
+                                className="h-16 w-16 object-cover rounded-md"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removePhoto(index)}
+                                className="absolute -top-1.5 -right-1.5 bg-destructive text-destructive-foreground rounded-full p-0.5"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={reviewPhotos.length >= 5}
+                        className="gap-2"
+                      >
+                        <Camera className="h-4 w-4" />
+                        Foto's toevoegen
+                      </Button>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handlePhotoSelect}
+                        className="hidden"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Max 5 foto's, 10MB per foto
+                      </p>
+                    </div>
                   </div>
 
                   <Button type="submit" className="w-full" disabled={addReview.isPending}>
