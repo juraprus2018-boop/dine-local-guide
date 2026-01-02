@@ -14,8 +14,7 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://happio.nl/sitemap.xml
-
+Sitemap: https://www.happio.nl/sitemap.xml
 # Disallow admin and private pages
 Disallow: /admin/
 Disallow: /auth
