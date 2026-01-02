@@ -195,8 +195,13 @@ export default function ReviewsPage() {
       setGuestEmail('');
       setReviewPhotos([]);
       setPhotoPreviews([]);
-    } catch (error) {
-      toast({ title: 'Er ging iets mis', variant: 'destructive' });
+    } catch (error: any) {
+      console.error('Review submission error:', error);
+      toast({ 
+        title: 'Er ging iets mis', 
+        description: error?.message || 'Probeer het opnieuw', 
+        variant: 'destructive' 
+      });
     }
   };
 

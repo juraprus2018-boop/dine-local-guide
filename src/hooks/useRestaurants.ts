@@ -255,7 +255,15 @@ export function useAddReview() {
       restaurant_name?: string;
       city_name?: string;
     }) => {
-      const { restaurant_name, city_name, ...reviewData } = review;
+      const { restaurant_name, city_name, user_id, ...restData } = review;
+      
+      // Prepare review data - ensure proper user_id handling for RLS policies
+      const reviewData = {
+        ...restData,
+        user_id: user_id || null, // Explicitly set to null for guest reviews
+      };
+      
+      console.log('Submitting review:', { ...reviewData, restaurant_name, city_name });
       
       const { data, error } = await supabase
         .from('reviews')
@@ -263,7 +271,10 @@ export function useAddReview() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Review insert error:', error);
+        throw error;
+      }
 
       // Send review notification emails
       try {
