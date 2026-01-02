@@ -14,7 +14,7 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://eoxcxesrejwbczhyjjsf.supabase.co/functions/v1/sitemap
+Sitemap: https://happio.nl/sitemap.xml
 
 # Disallow admin and private pages
 Disallow: /admin/
