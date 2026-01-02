@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   MapPin, Phone, Globe, Clock, Star, Heart, Share2, 
   ChevronLeft, ChevronRight, ExternalLink, Check, X
@@ -23,6 +23,8 @@ import { PhotoUpload } from '@/components/restaurants/PhotoUpload';
 import { ClaimButton } from '@/components/restaurants/ClaimButton';
 import { ReviewPhotoUpload } from '@/components/reviews/ReviewPhotoUpload';
 import { AdBlock } from '@/components/ads/AdBlock';
+import ReCaptcha, { ReCaptchaRef } from '@/components/ReCaptcha';
+import { verifyRecaptcha } from '@/hooks/useRecaptcha';
 import { supabase } from '@/integrations/supabase/client';
 import type { OpeningHours, DayHours } from '@/types/database';
 
@@ -96,6 +98,8 @@ export default function RestaurantPage() {
   const [reviewPhotos, setReviewPhotos] = useState<File[]>([]);
   const [guestName, setGuestName] = useState('');
   const [guestEmail, setGuestEmail] = useState('');
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+  const recaptchaRef = useRef<ReCaptchaRef>(null);
 
   // Track page view when restaurant is loaded
   useTrackPageView({ 
@@ -160,6 +164,35 @@ export default function RestaurantPage() {
   const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validatie
+    if (!user && !guestName.trim()) {
+      toast({ title: 'Vul je naam in', variant: 'destructive' });
+      return;
+    }
+    if (!user && !guestEmail.trim()) {
+      toast({ title: 'Vul je email in', variant: 'destructive' });
+      return;
+    }
+    if (!reviewContent.trim()) {
+      toast({ title: 'Vul je ervaring in', variant: 'destructive' });
+      return;
+    }
+
+    // reCAPTCHA verificatie
+    const token = recaptchaRef.current?.getToken();
+    if (!token) {
+      toast({ title: 'Bevestig dat je geen robot bent', variant: 'destructive' });
+      return;
+    }
+
+    const isHuman = await verifyRecaptcha(token);
+    if (!isHuman) {
+      toast({ title: 'reCAPTCHA verificatie mislukt', variant: 'destructive' });
+      recaptchaRef.current?.reset();
+      setRecaptchaToken(null);
+      return;
+    }
+    
     try {
       const result = await addReview.mutateAsync({
         restaurant_id: restaurant.id,
@@ -211,6 +244,8 @@ export default function RestaurantPage() {
       setReviewPhotos([]);
       setGuestName('');
       setGuestEmail('');
+      setRecaptchaToken(null);
+      recaptchaRef.current?.reset();
     } catch (error) {
       toast({ title: 'Er ging iets mis', variant: 'destructive' });
     }
@@ -507,13 +542,14 @@ export default function RestaurantPage() {
                         </div>
 
                         <div>
-                          <Label htmlFor="reviewContent">Je ervaring</Label>
+                          <Label htmlFor="reviewContent">Je ervaring *</Label>
                           <Textarea
                             id="reviewContent"
                             value={reviewContent}
                             onChange={(e) => setReviewContent(e.target.value)}
                             placeholder="Vertel over je bezoek..."
                             rows={4}
+                            required
                           />
                         </div>
 
@@ -530,7 +566,14 @@ export default function RestaurantPage() {
                           </div>
                         </div>
 
-                        <Button type="submit" disabled={addReview.isPending}>
+                        {/* reCAPTCHA */}
+                        <ReCaptcha 
+                          ref={recaptchaRef}
+                          onChange={setRecaptchaToken}
+                          className="mt-4"
+                        />
+
+                        <Button type="submit" disabled={addReview.isPending || !recaptchaToken}>
                           {addReview.isPending ? 'Bezig...' : 'Review plaatsen'}
                         </Button>
                       </form>
