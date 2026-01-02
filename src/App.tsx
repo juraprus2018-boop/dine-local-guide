@@ -26,6 +26,7 @@ import AdminImportPage from "./pages/admin/AdminImportPage";
 import AdminClaimsPage from "./pages/admin/AdminClaimsPage";
 import AdminReviewsPage from "./pages/admin/AdminReviewsPage";
 import AdminAdsPage from "./pages/admin/AdminAdsPage";
+import AdminAnalyticsPage from "./pages/admin/AdminAnalyticsPage";
 import AboutPage from "./pages/AboutPage";
 import ContactPage from "./pages/ContactPage";
 import FAQPage from "./pages/FAQPage";
@@ -81,6 +82,7 @@ const App = () => (
             <Route path="/admin/claims" element={<AdminClaimsPage />} />
             <Route path="/admin/reviews" element={<AdminReviewsPage />} />
             <Route path="/admin/advertenties" element={<AdminAdsPage />} />
+            <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
             <Route path="/:citySlug" element={<CityPage />} />
             <Route path="/:citySlug/:restaurantSlug" element={<RestaurantPage />} />
             <Route path="*" element={<NotFound />} />
