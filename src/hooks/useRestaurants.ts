@@ -32,6 +32,10 @@ export function useRestaurants(filters: RestaurantFilters = {}) {
         query = query.gte('rating', filters.minRating);
       }
 
+      if (filters.minReviews) {
+        query = query.gte('review_count', filters.minReviews);
+      }
+
       if (filters.priceRange && filters.priceRange.length > 0) {
         query = query.in('price_range', filters.priceRange);
       }

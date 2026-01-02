@@ -150,6 +150,7 @@ export interface RestaurantFilters {
   cuisineSlug?: string;
   priceRange?: PriceRange[];
   minRating?: number;
+  minReviews?: number;
   features?: string[];
   isOpen?: boolean;
   search?: string;
