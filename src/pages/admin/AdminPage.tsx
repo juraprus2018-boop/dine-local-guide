@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { LayoutDashboard, MapPin, Utensils, Users, Star, FileCheck, Download, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, MapPin, Utensils, Users, Star, FileCheck, Download, MessageSquare, BarChart3, Megaphone } from 'lucide-react';
 import { Layout } from '@/components/layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -156,6 +156,40 @@ export default function AdminPage() {
               <CardContent>
                 <Button variant="outline" asChild>
                   <Link to="/admin/reviews">Naar Reviews</Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5" />
+                  Analytics
+                </CardTitle>
+                <CardDescription>
+                  Bekijk bezoekersstatistieken en paginaweergaven
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="outline" asChild>
+                  <Link to="/admin/analytics">Naar Analytics</Link>
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Megaphone className="h-5 w-5" />
+                  Advertenties
+                </CardTitle>
+                <CardDescription>
+                  Beheer Google Ads scripts voor homepage, stadspagina's en detailpagina's
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="outline" asChild>
+                  <Link to="/admin/advertenties">Naar Advertenties</Link>
                 </Button>
               </CardContent>
             </Card>
