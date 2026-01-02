@@ -1,6 +1,7 @@
-import { useParams, useSearchParams, Link } from 'react-router-dom';
+import { useParams, useSearchParams, Link, Navigate } from 'react-router-dom';
 import { useState } from 'react';
 import { MapPin, Filter, Grid, List, SlidersHorizontal } from 'lucide-react';
+import NotFound from './NotFound';
 import { Layout } from '@/components/layout';
 import { RestaurantCard } from '@/components/restaurants/RestaurantCard';
 import { SearchBar } from '@/components/search/SearchBar';
@@ -80,19 +81,7 @@ export default function CityPage() {
   }
 
   if (!city) {
-    return (
-      <Layout title="Stad niet gevonden">
-        <div className="container-wide py-16 text-center">
-          <h1 className="text-2xl font-semibold">Stad niet gevonden</h1>
-          <p className="mt-2 text-muted-foreground">
-            We konden geen stad vinden met deze naam.
-          </p>
-          <Button asChild className="mt-6">
-            <Link to="/ontdek">Bekijk alle steden</Link>
-          </Button>
-        </div>
-      </Layout>
-    );
+    return <NotFound />;
   }
 
   // City JSON-LD structured data
