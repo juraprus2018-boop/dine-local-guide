@@ -1,6 +1,6 @@
-import { useState, useCallback, FormEvent } from 'react';
+import { useState, useCallback, FormEvent, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, MapPin, X } from 'lucide-react';
+import { Search, MapPin, X, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -22,21 +22,31 @@ interface SearchBarProps {
 export function SearchBar({ variant = 'default', className }: SearchBarProps) {
   const [query, setQuery] = useState('');
   const [location, setLocation] = useState('');
+  const [locationFilter, setLocationFilter] = useState('');
   const [open, setOpen] = useState(false);
   const [locationOpen, setLocationOpen] = useState(false);
+  const [isNearby, setIsNearby] = useState(false);
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
   const navigate = useNavigate();
 
   const { data: searchResults } = useSearch(query);
   const { data: cities } = useCities();
 
+  // Filter cities based on input
+  const filteredCities = cities?.filter(city => 
+    city.name.toLowerCase().includes(locationFilter.toLowerCase())
+  ).slice(0, 10) || [];
+
   const handleSearch = useCallback((e: FormEvent) => {
     e.preventDefault();
-    if (location) {
+    if (isNearby) {
+      navigate(`/in-de-buurt${query ? `?q=${encodeURIComponent(query)}` : ''}`);
+    } else if (location) {
       navigate(`/${location}${query ? `?q=${encodeURIComponent(query)}` : ''}`);
     } else if (query) {
       navigate(`/zoeken?q=${encodeURIComponent(query)}`);
     }
-  }, [query, location, navigate]);
+  }, [query, location, isNearby, navigate]);
 
   const handleSelectResult = (type: string, slug: string, citySlug?: string) => {
     setOpen(false);
@@ -51,7 +61,37 @@ export function SearchBar({ variant = 'default', className }: SearchBarProps) {
 
   const handleSelectCity = (citySlug: string) => {
     setLocation(citySlug);
+    setLocationFilter('');
     setLocationOpen(false);
+    setIsNearby(false);
+  };
+
+  const handleSelectNearby = () => {
+    setIsLoadingLocation(true);
+    setIsNearby(true);
+    setLocation('');
+    setLocationFilter('');
+    setLocationOpen(false);
+    
+    // Try to get location permission
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        () => {
+          setIsLoadingLocation(false);
+        },
+        () => {
+          setIsLoadingLocation(false);
+        }
+      );
+    } else {
+      setIsLoadingLocation(false);
+    }
+  };
+
+  const getLocationDisplayValue = () => {
+    if (isNearby) return 'In de buurt';
+    if (location) return cities?.find(c => c.slug === location)?.name || location;
+    return '';
   };
 
   const isHero = variant === 'hero';
@@ -76,6 +116,9 @@ export function SearchBar({ variant = 'default', className }: SearchBarProps) {
                 setQuery(e.target.value);
                 if (e.target.value.length >= 2) setOpen(true);
               }}
+              onFocus={() => {
+                if (query.length >= 2) setOpen(true);
+              }}
               placeholder="Restaurant, keuken of gerecht..."
               className={cn(
                 'pl-10 pr-4',
@@ -93,8 +136,8 @@ export function SearchBar({ variant = 'default', className }: SearchBarProps) {
             )}
           </div>
         </PopoverTrigger>
-        <PopoverContent className="w-[300px] p-0" align="start">
-          <Command>
+        <PopoverContent className="w-[300px] p-0 bg-popover" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
+          <Command shouldFilter={false}>
             <CommandList>
               <CommandEmpty>Geen resultaten gevonden.</CommandEmpty>
               {searchResults?.restaurants && searchResults.restaurants.length > 0 && (
@@ -150,23 +193,37 @@ export function SearchBar({ variant = 'default', className }: SearchBarProps) {
       <Popover open={locationOpen} onOpenChange={setLocationOpen}>
         <PopoverTrigger asChild>
           <div className="relative flex-1 sm:max-w-[200px]">
-            <MapPin className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+            {isNearby ? (
+              <Navigation className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-primary" />
+            ) : (
+              <MapPin className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+            )}
             <Input
-              value={location ? cities?.find(c => c.slug === location)?.name || location : ''}
+              value={locationOpen ? locationFilter : getLocationDisplayValue()}
               onChange={(e) => {
-                setLocation(e.target.value);
+                setLocationFilter(e.target.value);
                 setLocationOpen(true);
+                if (e.target.value) {
+                  setIsNearby(false);
+                  setLocation('');
+                }
               }}
+              onFocus={() => setLocationOpen(true)}
               placeholder="Locatie"
               className={cn(
                 'pl-10 pr-4',
-                isHero && 'h-12 border-0 border-l bg-transparent text-base focus-visible:ring-0 rounded-l-none'
+                isHero && 'h-12 border-0 border-l bg-transparent text-base focus-visible:ring-0 rounded-l-none',
+                isNearby && 'text-primary'
               )}
             />
-            {location && (
+            {(location || isNearby) && (
               <button
                 type="button"
-                onClick={() => setLocation('')}
+                onClick={() => {
+                  setLocation('');
+                  setLocationFilter('');
+                  setIsNearby(false);
+                }}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
                 <X className="h-4 w-4" />
@@ -174,22 +231,50 @@ export function SearchBar({ variant = 'default', className }: SearchBarProps) {
             )}
           </div>
         </PopoverTrigger>
-        <PopoverContent className="w-[200px] p-0" align="start">
-          <Command>
+        <PopoverContent className="w-[220px] p-0 bg-popover" align="start" onOpenAutoFocus={(e) => e.preventDefault()}>
+          <Command shouldFilter={false}>
             <CommandList>
-              <CommandEmpty>Geen steden gevonden.</CommandEmpty>
-              <CommandGroup heading="Populaire steden">
-                {cities?.slice(0, 10).map((city) => (
-                  <CommandItem
-                    key={city.id}
-                    onSelect={() => handleSelectCity(city.slug)}
-                    className="cursor-pointer"
-                  >
-                    <MapPin className="mr-2 h-4 w-4" />
-                    {city.name}
-                  </CommandItem>
-                ))}
+              {/* Nearby option */}
+              <CommandGroup>
+                <CommandItem
+                  onSelect={handleSelectNearby}
+                  className="cursor-pointer"
+                >
+                  <Navigation className="mr-2 h-4 w-4 text-primary" />
+                  <span className="text-primary font-medium">In de buurt</span>
+                  {isLoadingLocation && <span className="ml-2 text-xs text-muted-foreground">laden...</span>}
+                </CommandItem>
               </CommandGroup>
+              
+              {filteredCities.length > 0 ? (
+                <CommandGroup heading="Steden">
+                  {filteredCities.map((city) => (
+                    <CommandItem
+                      key={city.id}
+                      onSelect={() => handleSelectCity(city.slug)}
+                      className="cursor-pointer"
+                    >
+                      <MapPin className="mr-2 h-4 w-4" />
+                      {city.name}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              ) : locationFilter ? (
+                <CommandEmpty>Geen steden gevonden.</CommandEmpty>
+              ) : (
+                <CommandGroup heading="Populaire steden">
+                  {cities?.slice(0, 8).map((city) => (
+                    <CommandItem
+                      key={city.id}
+                      onSelect={() => handleSelectCity(city.slug)}
+                      className="cursor-pointer"
+                    >
+                      <MapPin className="mr-2 h-4 w-4" />
+                      {city.name}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              )}
             </CommandList>
           </Command>
         </PopoverContent>
