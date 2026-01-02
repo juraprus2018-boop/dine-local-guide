@@ -22,7 +22,8 @@ interface ReCaptchaProps {
 declare global {
   interface Window {
     grecaptcha?: {
-      render: (
+      // v2 (explicit) API
+      render?: (
         container: HTMLElement,
         parameters: {
           sitekey: string;
@@ -31,33 +32,92 @@ declare global {
           "error-callback"?: () => void;
         }
       ) => number;
-      getResponse: (widgetId?: number) => string;
-      reset: (widgetId?: number) => void;
+      getResponse?: (widgetId?: number) => string;
+      reset?: (widgetId?: number) => void;
+
+      // sometimes reCAPTCHA is exposed under grecaptcha.enterprise
+      enterprise?: {
+        render?: (
+          container: HTMLElement,
+          parameters: {
+            sitekey: string;
+            callback?: (token: string) => void;
+            "expired-callback"?: () => void;
+            "error-callback"?: () => void;
+          }
+        ) => number;
+        getResponse?: (widgetId?: number) => string;
+        reset?: (widgetId?: number) => void;
+      };
+
+      // v3 API may exist if a third-party script (e.g. ads) loaded it
+      ready?: (cb: () => void) => void;
+      execute?: (siteKey: string, options?: { action?: string }) => Promise<string>;
     };
+
+    // internal onload callback (set by this component)
+    __happioRecaptchaOnload?: () => void;
   }
+}
+
+function getExplicitGrecaptcha() {
+  const g = window.grecaptcha;
+  if (g && typeof g.render === "function") return g;
+  if (g?.enterprise && typeof g.enterprise.render === "function") return g.enterprise;
+  return null;
 }
 
 function loadRecaptchaScript(): Promise<void> {
   return new Promise((resolve, reject) => {
-    if (window.grecaptcha) return resolve();
+    if (getExplicitGrecaptcha()) return resolve();
 
-    const existing = document.getElementById("recaptcha-script") as
+    let done = false;
+    const finish = (err?: Error) => {
+      if (done) return;
+      done = true;
+      if (err) reject(err);
+      else resolve();
+    };
+
+    // Poll for the explicit API (covers cases where another script overwrote grecaptcha)
+    const startedAt = Date.now();
+    const poll = () => {
+      if (getExplicitGrecaptcha()) return finish();
+      if (Date.now() - startedAt > 8000) {
+        return finish(
+          new Error(
+            "reCAPTCHA kon niet laden (render ontbreekt). Mogelijk heeft een advertentie-script reCAPTCHA v3 geladen."
+          )
+        );
+      }
+      setTimeout(poll, 100);
+    };
+
+    // If we already inserted our explicit script, just start polling.
+    const existing = document.getElementById("recaptcha-script-explicit") as
       | HTMLScriptElement
       | null;
     if (existing) {
-      existing.addEventListener("load", () => resolve(), { once: true });
-      existing.addEventListener("error", () => reject(), { once: true });
+      poll();
       return;
     }
 
+    // Insert explicit (v2) loader. The onload callback helps when the script is cached.
+    window.__happioRecaptchaOnload = () => {
+      // don't resolve immediately; poll ensures render exists
+      poll();
+    };
+
     const script = document.createElement("script");
-    script.id = "recaptcha-script";
-    script.src = "https://www.google.com/recaptcha/api.js?render=explicit";
+    script.id = "recaptcha-script-explicit";
+    script.src =
+      "https://www.google.com/recaptcha/api.js?onload=__happioRecaptchaOnload&render=explicit";
     script.async = true;
     script.defer = true;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error("Failed to load reCAPTCHA script"));
+    script.onerror = () => finish(new Error("Failed to load reCAPTCHA script"));
     document.head.appendChild(script);
+
+    poll();
   });
 }
 
@@ -71,13 +131,15 @@ const ReCaptchaComponent = forwardRef<ReCaptchaRef, ReCaptchaProps>(
 
     useImperativeHandle(ref, () => ({
       getToken: () => {
+        const api = getExplicitGrecaptcha();
         const widgetId = widgetIdRef.current ?? undefined;
-        const token = window.grecaptcha?.getResponse(widgetId);
+        const token = api?.getResponse?.(widgetId);
         return token || null;
       },
       reset: () => {
+        const api = getExplicitGrecaptcha();
         const widgetId = widgetIdRef.current ?? undefined;
-        window.grecaptcha?.reset(widgetId);
+        api?.reset?.(widgetId);
         onChange?.(null);
       },
     }));
@@ -108,10 +170,12 @@ const ReCaptchaComponent = forwardRef<ReCaptchaRef, ReCaptchaProps>(
       if (!enabled) return;
       if (!ready) return;
       if (!containerRef.current) return;
-      if (!window.grecaptcha) return;
       if (widgetIdRef.current !== null) return;
 
-      widgetIdRef.current = window.grecaptcha.render(containerRef.current, {
+      const api = getExplicitGrecaptcha();
+      if (!api?.render) return;
+
+      widgetIdRef.current = api.render(containerRef.current, {
         sitekey: RECAPTCHA_SITE_KEY,
         callback: (token) => onChange?.(token),
         "expired-callback": () => onChange?.(null),

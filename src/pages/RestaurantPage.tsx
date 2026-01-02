@@ -510,7 +510,7 @@ export default function RestaurantPage() {
                         {!user && (
                           <div className="grid gap-4 sm:grid-cols-2">
                             <div>
-                              <Label htmlFor="guestName">Je naam</Label>
+                              <Label htmlFor="guestName">Je naam *</Label>
                               <Input
                                 id="guestName"
                                 value={guestName}
@@ -519,7 +519,7 @@ export default function RestaurantPage() {
                               />
                             </div>
                             <div>
-                              <Label htmlFor="guestEmail">Je email</Label>
+                              <Label htmlFor="guestEmail">Je email *</Label>
                               <Input
                                 id="guestEmail"
                                 type="email"
