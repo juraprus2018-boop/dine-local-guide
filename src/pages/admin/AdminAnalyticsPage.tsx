@@ -63,7 +63,7 @@ export default function AdminAnalyticsPage() {
 
       let query = supabase
         .from('page_views')
-        .select('id, created_at, ip_hash, page_type');
+        .select('id, created_at, ip_hash, page_type, page_slug, restaurant_id');
 
       if (selectedRestaurant !== 'all') {
         query = query.eq('restaurant_id', selectedRestaurant);
@@ -84,6 +84,21 @@ export default function AdminAnalyticsPage() {
         pageTypes[v.page_type] = (pageTypes[v.page_type] || 0) + 1;
       });
 
+      // Top pages breakdown (by page_slug or restaurant_id)
+      const topPages: Record<string, { count: number; type: string; restaurantId?: string }> = {};
+      views.forEach(v => {
+        const key = v.page_slug || v.page_type;
+        if (!topPages[key]) {
+          topPages[key] = { count: 0, type: v.page_type, restaurantId: v.restaurant_id || undefined };
+        }
+        topPages[key].count++;
+      });
+
+      // Sort and get top 10
+      const sortedPages = Object.entries(topPages)
+        .sort((a, b) => b[1].count - a[1].count)
+        .slice(0, 10);
+
       return {
         total: views.length,
         today,
@@ -91,6 +106,7 @@ export default function AdminAnalyticsPage() {
         thisMonth,
         uniqueVisitors: uniqueHashes.size,
         pageTypes,
+        topPages: sortedPages,
       };
     },
     enabled: isAdmin,
@@ -139,6 +155,32 @@ export default function AdminAnalyticsPage() {
       return result;
     },
     enabled: isAdmin,
+  });
+
+  // Get restaurant names for top pages
+  const { data: restaurantNames } = useQuery({
+    queryKey: ['restaurant-names-for-analytics', stats?.topPages],
+    queryFn: async () => {
+      const restaurantIds = stats?.topPages
+        ?.filter(([_, data]) => data.restaurantId)
+        .map(([_, data]) => data.restaurantId) || [];
+      
+      if (restaurantIds.length === 0) return {};
+
+      const { data, error } = await supabase
+        .from('restaurants')
+        .select('id, name, slug')
+        .in('id', restaurantIds as string[]);
+
+      if (error) throw error;
+
+      const map: Record<string, { name: string; slug: string }> = {};
+      data?.forEach(r => {
+        map[r.id] = { name: r.name, slug: r.slug };
+      });
+      return map;
+    },
+    enabled: !!stats?.topPages && stats.topPages.length > 0,
   });
 
   if (!user) {
@@ -384,6 +426,59 @@ export default function AdminAnalyticsPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Top Pages */}
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Populairste pagina's</CardTitle>
+            <CardDescription>Top 10 meest bezochte pagina's</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {stats?.topPages && stats.topPages.length > 0 ? (
+              <div className="space-y-3">
+                {stats.topPages.map(([slug, data], index) => {
+                  const restaurantInfo = data.restaurantId ? restaurantNames?.[data.restaurantId] : null;
+                  const displayName = restaurantInfo?.name || slug;
+                  const pageUrl = data.type === 'restaurant' && restaurantInfo?.slug 
+                    ? `/${restaurantInfo.slug}` 
+                    : data.type === 'city' 
+                    ? `/${slug}` 
+                    : '/';
+                  
+                  return (
+                    <div key={slug} className="flex items-center gap-4">
+                      <span className="w-6 text-center font-bold text-muted-foreground">{index + 1}</span>
+                      <div className="flex-1 min-w-0">
+                        <Link 
+                          to={pageUrl}
+                          className="text-sm font-medium hover:underline truncate block"
+                        >
+                          {displayName}
+                        </Link>
+                        <span className="text-xs text-muted-foreground">
+                          {pageTypeLabels[data.type] || data.type}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-32 h-2 bg-muted rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-primary rounded-full"
+                            style={{ width: `${(data.count / stats.topPages[0][1].count) * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-sm font-medium w-16 text-right">{data.count} views</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="py-8 text-center text-muted-foreground">
+                Nog geen data beschikbaar
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </Layout>
   );
