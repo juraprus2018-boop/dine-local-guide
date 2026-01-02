@@ -145,32 +145,35 @@ export type Database = {
         Row: {
           caption: string | null
           created_at: string
+          guest_name: string | null
           id: string
           image_url: string
           likes_count: number
           restaurant_id: string | null
           updated_at: string
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           caption?: string | null
           created_at?: string
+          guest_name?: string | null
           id?: string
           image_url: string
           likes_count?: number
           restaurant_id?: string | null
           updated_at?: string
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           caption?: string | null
           created_at?: string
+          guest_name?: string | null
           id?: string
           image_url?: string
           likes_count?: number
           restaurant_id?: string | null
           updated_at?: string
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {

@@ -21,7 +21,8 @@ import { nl } from 'date-fns/locale';
 
 interface FoodPost {
   id: string;
-  user_id: string;
+  user_id: string | null;
+  guest_name: string | null;
   restaurant_id: string | null;
   image_url: string;
   caption: string | null;
@@ -133,33 +134,25 @@ export default function FoodwallPage() {
               <h1 className="font-display text-3xl font-bold md:text-4xl">
                 🍽️ Foodwall
               </h1>
-              <p className="mt-2 text-muted-foreground">
-                Deel je favoriete gerechten en ontdek wat anderen eten
-              </p>
-            </div>
+            <p className="mt-2 text-muted-foreground">
+              Deel je favoriete gerechten en ontdek wat anderen eten
+            </p>
+          </div>
 
-            {user && (
-              <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button size="lg" className="gap-2">
-                    <Plus className="h-5 w-5" />
-                    Post delen
-                  </Button>
-                </DialogTrigger>
-                <CreatePostDialog 
-                  onSuccess={() => {
-                    setCreateDialogOpen(false);
-                    queryClient.invalidateQueries({ queryKey: ['food-posts'] });
-                  }} 
-                />
-              </Dialog>
-            )}
-
-            {!user && (
-              <Button asChild>
-                <Link to="/auth">Log in om te posten</Link>
+          <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="lg" className="gap-2">
+                <Plus className="h-5 w-5" />
+                Post delen
               </Button>
-            )}
+            </DialogTrigger>
+            <CreatePostDialog 
+              onSuccess={() => {
+                setCreateDialogOpen(false);
+                queryClient.invalidateQueries({ queryKey: ['food-posts'] });
+              }} 
+            />
+          </Dialog>
           </div>
         </div>
       </section>
@@ -234,12 +227,12 @@ function FoodPostCard({ post, onLike }: { post: FoodPost; onLike: (postId: strin
           <Avatar className="h-8 w-8">
             <AvatarImage src={post.profile?.avatar_url || undefined} />
             <AvatarFallback>
-              {post.profile?.display_name?.[0]?.toUpperCase() || 'U'}
+              {(post.profile?.display_name?.[0] || post.guest_name?.[0] || 'G').toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium truncate">
-              {post.profile?.display_name || 'Gebruiker'}
+              {post.profile?.display_name || post.guest_name || 'Gast'}
             </p>
             <p className="text-xs text-muted-foreground">
               {formatDistanceToNow(new Date(post.created_at), { addSuffix: true, locale: nl })}
@@ -285,15 +278,11 @@ function CreatePostDialog({ onSuccess }: { onSuccess: () => void }) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [caption, setCaption] = useState('');
+  const [guestName, setGuestName] = useState('');
   const [selectedRestaurant, setSelectedRestaurant] = useState<{ id: string; name: string } | null>(null);
   const [restaurantSearch, setRestaurantSearch] = useState('');
   const [restaurantPopoverOpen, setRestaurantPopoverOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-
-  // Guard: don't render if not authenticated
-  if (!user) {
-    return null;
-  }
 
   // Search restaurants
   const { data: restaurants } = useQuery({
@@ -336,13 +325,20 @@ function CreatePostDialog({ onSuccess }: { onSuccess: () => void }) {
   };
 
   const handleSubmit = async () => {
-    if (!selectedFile || !user) return;
+    if (!selectedFile) return;
+    
+    // Require guest name if not logged in
+    if (!user && !guestName.trim()) {
+      toast.error('Vul je naam in');
+      return;
+    }
 
     setIsUploading(true);
     try {
       // Upload image
       const fileExt = selectedFile.name.split('.').pop();
-      const fileName = `foodwall/${user.id}/${Date.now()}.${fileExt}`;
+      const uniqueId = user?.id || 'guest';
+      const fileName = `foodwall/${uniqueId}/${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from('restaurant-photos')
@@ -361,7 +357,8 @@ function CreatePostDialog({ onSuccess }: { onSuccess: () => void }) {
       const { error: postError } = await supabase
         .from('food_posts')
         .insert({
-          user_id: user.id,
+          user_id: user?.id || null,
+          guest_name: user ? null : guestName.trim(),
           image_url: publicUrl,
           caption: caption || null,
           restaurant_id: selectedRestaurant?.id || null,
@@ -423,6 +420,20 @@ function CreatePostDialog({ onSuccess }: { onSuccess: () => void }) {
           onChange={handleFileSelect}
           className="hidden"
         />
+
+        {/* Guest name (only for non-logged in users) */}
+        {!user && (
+          <div className="space-y-2">
+            <Label htmlFor="guestName">Je naam *</Label>
+            <Input
+              id="guestName"
+              placeholder="Hoe mogen we je noemen?"
+              value={guestName}
+              onChange={(e) => setGuestName(e.target.value)}
+              maxLength={50}
+            />
+          </div>
+        )}
 
         {/* Caption */}
         <div className="space-y-2">
