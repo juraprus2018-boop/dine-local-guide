@@ -98,7 +98,7 @@ serve(async (req) => {
           .select('role')
           .eq('user_id', user.id)
           .eq('role', 'admin')
-          .single();
+          .maybeSingle();
 
         if (!roleData) {
           return new Response(
@@ -115,56 +115,209 @@ serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { restaurantId, batchSize = 10, offset = 0 } = body;
+    const { action, jobId, batchSize = 5 } = body;
 
-    // If specific restaurant ID provided, only process that one
-    let restaurantsQuery = supabase
-      .from('restaurants')
-      .select('id, name, slug, google_place_id, city:cities(name, slug)')
-      .not('google_place_id', 'is', null);
+    // Handle different actions
+    if (action === 'status') {
+      // Get current job status
+      const { data: job } = await supabase
+        .from('photo_refresh_jobs')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-    if (restaurantId) {
-      restaurantsQuery = restaurantsQuery.eq('id', restaurantId);
-    } else {
-      restaurantsQuery = restaurantsQuery.range(offset, offset + batchSize - 1);
-    }
-
-    const { data: restaurants, error: fetchError } = await restaurantsQuery;
-
-    if (fetchError) {
-      throw new Error(`Failed to fetch restaurants: ${fetchError.message}`);
-    }
-
-    if (!restaurants || restaurants.length === 0) {
       return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: 'No more restaurants to process',
-          processed: 0,
-          hasMore: false 
-        }),
+        JSON.stringify({ job }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`Processing ${restaurants.length} restaurants (offset: ${offset})`);
+    if (action === 'pause') {
+      // Pause current job
+      await supabase
+        .from('photo_refresh_jobs')
+        .update({ status: 'paused' })
+        .eq('id', jobId);
 
-    const results = {
-      processed: 0,
-      photosDownloaded: 0,
-      errors: [] as string[],
-    };
+      return new Response(
+        JSON.stringify({ success: true, message: 'Job paused' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (action === 'start' || action === 'resume') {
+      // Get total count of restaurants with google_place_id
+      const { count: totalCount } = await supabase
+        .from('restaurants')
+        .select('id', { count: 'exact', head: true })
+        .not('google_place_id', 'is', null);
+
+      let job;
+
+      if (action === 'resume' && jobId) {
+        // Resume existing job
+        const { data: existingJob } = await supabase
+          .from('photo_refresh_jobs')
+          .select('*')
+          .eq('id', jobId)
+          .maybeSingle();
+
+        if (existingJob) {
+          await supabase
+            .from('photo_refresh_jobs')
+            .update({ status: 'running' })
+            .eq('id', jobId);
+          job = { ...existingJob, status: 'running' };
+        }
+      }
+
+      if (!job) {
+        // Create new job
+        const { data: newJob, error: createError } = await supabase
+          .from('photo_refresh_jobs')
+          .insert({
+            status: 'running',
+            total_restaurants: totalCount || 0,
+            started_at: new Date().toISOString(),
+          })
+          .select()
+          .single();
+
+        if (createError) throw createError;
+        job = newJob;
+      }
+
+      // Start processing in background
+      (globalThis as any).EdgeRuntime?.waitUntil?.(processPhotos(supabase, googleApiKey, job.id, batchSize)) 
+        || processPhotos(supabase, googleApiKey, job.id, batchSize);
+
+      return new Response(
+        JSON.stringify({ success: true, job }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    return new Response(
+      JSON.stringify({ error: 'Invalid action' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    console.error('Error in refresh-restaurant-photos:', error);
+    return new Response(
+      JSON.stringify({ 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+});
+
+async function processPhotos(supabase: any, googleApiKey: string, jobId: string, batchSize: number) {
+  const MAX_TIME_MS = 55000; // 55 seconds max to stay within limits
+  const startTime = Date.now();
+
+  try {
+    // Get current job
+    const { data: job } = await supabase
+      .from('photo_refresh_jobs')
+      .select('*')
+      .eq('id', jobId)
+      .single();
+
+    if (!job) {
+      console.error('Job not found:', jobId);
+      return;
+    }
+
+    // Get already completed restaurant IDs
+    const completedIds = (job.completed_restaurants || []).map((r: any) => r.id);
+
+    // Get restaurants that haven't been processed yet
+    let query = supabase
+      .from('restaurants')
+      .select('id, name, slug, google_place_id, city:cities(name, slug)')
+      .not('google_place_id', 'is', null)
+      .order('name', { ascending: true })
+      .limit(batchSize);
+
+    if (completedIds.length > 0) {
+      // Filter out already completed restaurants
+      query = query.not('id', 'in', `(${completedIds.join(',')})`);
+    }
+
+    const { data: restaurants, error: fetchError } = await query;
+
+    if (fetchError) {
+      console.error('Error fetching restaurants:', fetchError);
+      await supabase
+        .from('photo_refresh_jobs')
+        .update({ 
+          status: 'failed',
+          errors: [...(job.errors || []), fetchError.message]
+        })
+        .eq('id', jobId);
+      return;
+    }
+
+    if (!restaurants || restaurants.length === 0) {
+      // All done!
+      await supabase
+        .from('photo_refresh_jobs')
+        .update({ 
+          status: 'completed',
+          completed_at: new Date().toISOString()
+        })
+        .eq('id', jobId);
+      console.log('Photo refresh completed!');
+      return;
+    }
+
+    console.log(`Processing ${restaurants.length} restaurants`);
+
+    const newCompleted: any[] = [];
+    let photosDownloaded = 0;
+    const errors: string[] = [];
 
     for (const restaurant of restaurants) {
+      // Check if we should stop (time limit or paused)
+      if (Date.now() - startTime > MAX_TIME_MS) {
+        console.log('Time limit reached, will continue in next batch');
+        break;
+      }
+
+      // Check if job was paused
+      const { data: currentJob } = await supabase
+        .from('photo_refresh_jobs')
+        .select('status')
+        .eq('id', jobId)
+        .single();
+
+      if (currentJob?.status === 'paused') {
+        console.log('Job paused by user');
+        return;
+      }
+
       try {
         const cityData = restaurant.city as { name: string; slug: string } | { name: string; slug: string }[] | null;
         const city = Array.isArray(cityData) ? cityData[0] : cityData;
+        
         if (!city) {
-          results.errors.push(`${restaurant.name}: No city linked`);
+          errors.push(`${restaurant.name}: Geen stad gekoppeld`);
           continue;
         }
 
         console.log(`Processing: ${restaurant.name} (${restaurant.google_place_id})`);
+
+        // Update current restaurant being processed
+        await supabase
+          .from('photo_refresh_jobs')
+          .update({ 
+            last_restaurant_id: restaurant.id,
+            last_restaurant_name: restaurant.name
+          })
+          .eq('id', jobId);
 
         // Get place details from Google
         const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${restaurant.google_place_id}&fields=photos&key=${googleApiKey}`;
@@ -173,7 +326,7 @@ serve(async (req) => {
         const detailsData = await detailsResponse.json();
         
         if (detailsData.status !== 'OK') {
-          results.errors.push(`${restaurant.name}: Google API error - ${detailsData.status}`);
+          errors.push(`${restaurant.name}: Google API error - ${detailsData.status}`);
           continue;
         }
 
@@ -181,7 +334,15 @@ serve(async (req) => {
         
         if (photos.length === 0) {
           console.log(`No photos found for ${restaurant.name}`);
-          results.processed++;
+          newCompleted.push({
+            id: restaurant.id,
+            name: restaurant.name,
+            slug: restaurant.slug,
+            city: city.name,
+            citySlug: city.slug,
+            photosCount: 0,
+            url: `/${city.slug}/${restaurant.slug}`
+          });
           continue;
         }
 
@@ -193,10 +354,11 @@ serve(async (req) => {
           .delete()
           .eq('restaurant_id', restaurant.id);
 
-        // Download and upload all photos
+        // Download and upload all photos (max 10)
         const uploadedPhotos: Array<{ url: string; isPrimary: boolean }> = [];
+        const maxPhotos = Math.min(photos.length, 10);
         
-        for (let i = 0; i < photos.length; i++) {
+        for (let i = 0; i < maxPhotos; i++) {
           const photo = photos[i];
           const uploadResult = await downloadAndUploadPhoto(
             supabase,
@@ -214,7 +376,7 @@ serve(async (req) => {
               url: uploadResult.url,
               isPrimary: i === 0,
             });
-            results.photosDownloaded++;
+            photosDownloaded++;
           }
         }
 
@@ -242,42 +404,74 @@ serve(async (req) => {
             .insert(photoRecords);
         }
 
-        results.processed++;
+        newCompleted.push({
+          id: restaurant.id,
+          name: restaurant.name,
+          slug: restaurant.slug,
+          city: city.name,
+          citySlug: city.slug,
+          photosCount: uploadedPhotos.length,
+          url: `/${city.slug}/${restaurant.slug}`
+        });
+
         console.log(`Completed: ${restaurant.name} - ${uploadedPhotos.length} photos`);
 
       } catch (error) {
         const errMsg = error instanceof Error ? error.message : 'Unknown error';
-        results.errors.push(`${restaurant.name}: ${errMsg}`);
+        errors.push(`${restaurant.name}: ${errMsg}`);
         console.error(`Error processing ${restaurant.name}:`, error);
       }
     }
 
-    // Check if there are more restaurants
-    const { count } = await supabase
+    // Update job progress
+    const allCompleted = [...(job.completed_restaurants || []), ...newCompleted];
+    
+    await supabase
+      .from('photo_refresh_jobs')
+      .update({ 
+        processed_restaurants: allCompleted.length,
+        photos_downloaded: (job.photos_downloaded || 0) + photosDownloaded,
+        completed_restaurants: allCompleted,
+        errors: [...(job.errors || []), ...errors]
+      })
+      .eq('id', jobId);
+
+    // Check if there are more restaurants to process
+    const { count: remainingCount } = await supabase
       .from('restaurants')
       .select('id', { count: 'exact', head: true })
-      .not('google_place_id', 'is', null);
+      .not('google_place_id', 'is', null)
+      .not('id', 'in', `(${allCompleted.map((r: any) => r.id).join(',')})`);
 
-    const hasMore = !restaurantId && (offset + batchSize) < (count || 0);
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        ...results,
-        hasMore,
-        nextOffset: hasMore ? offset + batchSize : null,
-        totalRestaurants: count,
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    if (remainingCount && remainingCount > 0) {
+      // Schedule next batch
+      console.log(`${remainingCount} restaurants remaining, scheduling next batch...`);
+      
+      // Small delay before next batch
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Continue processing
+      await processPhotos(supabase, googleApiKey, jobId, batchSize);
+    } else {
+      // All done!
+      await supabase
+        .from('photo_refresh_jobs')
+        .update({ 
+          status: 'completed',
+          completed_at: new Date().toISOString()
+        })
+        .eq('id', jobId);
+      console.log('Photo refresh completed!');
+    }
 
   } catch (error) {
-    console.error('Error in refresh-restaurant-photos:', error);
-    return new Response(
-      JSON.stringify({ 
-        error: error instanceof Error ? error.message : 'Unknown error' 
-      }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    console.error('Error in processPhotos:', error);
+    await supabase
+      .from('photo_refresh_jobs')
+      .update({ 
+        status: 'failed',
+        errors: [error instanceof Error ? error.message : 'Unknown error']
+      })
+      .eq('id', jobId);
   }
-});
+}

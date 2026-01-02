@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Download, MapPin, Loader2, Building2, Utensils, Globe, Play, RefreshCw, CheckCircle, XCircle, Clock, Activity, Zap, Camera } from 'lucide-react';
+import { ArrowLeft, Download, MapPin, Loader2, Building2, Utensils, Globe, Play, Pause, RefreshCw, CheckCircle, XCircle, Clock, Activity, Zap, Camera } from 'lucide-react';
 import { Layout } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,6 +29,28 @@ interface ImportJob {
   last_city: string | null;
 }
 
+interface PhotoRefreshJob {
+  id: string;
+  status: string;
+  total_restaurants: number;
+  processed_restaurants: number;
+  photos_downloaded: number;
+  last_restaurant_id: string | null;
+  last_restaurant_name: string | null;
+  completed_restaurants: Array<{
+    id: string;
+    name: string;
+    slug: string;
+    city: string;
+    citySlug: string;
+    photosCount: number;
+    url: string;
+  }>;
+  errors: string[];
+  started_at: string | null;
+  completed_at: string | null;
+}
+
 interface ActivityLogEntry {
   id: string;
   timestamp: Date;
@@ -48,12 +70,7 @@ export default function AdminImportPage() {
   const [isImporting, setIsImporting] = useState(false);
   const [isLinkingCuisines, setIsLinkingCuisines] = useState(false);
   const [isRefreshingPhotos, setIsRefreshingPhotos] = useState(false);
-  const [photoRefreshProgress, setPhotoRefreshProgress] = useState<{
-    processed: number;
-    total: number;
-    photosDownloaded: number;
-    errors: string[];
-  } | null>(null);
+  const [photoRefreshJob, setPhotoRefreshJob] = useState<PhotoRefreshJob | null>(null);
   const [currentJob, setCurrentJob] = useState<ImportJob | null>(null);
   const [isLoadingStatus, setIsLoadingStatus] = useState(false);
   const [activityLog, setActivityLog] = useState<ActivityLogEntry[]>([]);
@@ -310,69 +327,126 @@ export default function AdminImportPage() {
     }
   };
 
-  const handleRefreshPhotos = async () => {
-    setIsRefreshingPhotos(true);
-    setPhotoRefreshProgress({ processed: 0, total: 0, photosDownloaded: 0, errors: [] });
-    
-    let offset = 0;
-    const batchSize = 10;
-    let hasMore = true;
-    let totalProcessed = 0;
-    let totalPhotos = 0;
-    const allErrors: string[] = [];
-    let totalRestaurants = 0;
-
+  const fetchPhotoJobStatus = useCallback(async () => {
     try {
-      while (hasMore) {
-        addLogEntry('info', `📸 Verwerken batch ${Math.floor(offset / batchSize) + 1}...`);
-        
-        const response = await supabase.functions.invoke('refresh-restaurant-photos', {
-          body: { batchSize, offset },
-        });
+      const response = await supabase.functions.invoke('refresh-restaurant-photos', {
+        body: { action: 'status' },
+      });
 
-        if (response.error) {
-          throw new Error(response.error.message);
-        }
+      if (response.data?.job) {
+        setPhotoRefreshJob(response.data.job);
+        setIsRefreshingPhotos(response.data.job.status === 'running');
+      }
+    } catch (error) {
+      console.error('Error fetching photo job status:', error);
+    }
+  }, []);
 
-        const result = response.data;
-        totalProcessed += result.processed || 0;
-        totalPhotos += result.photosDownloaded || 0;
-        totalRestaurants = result.totalRestaurants || totalRestaurants;
-        
-        if (result.errors?.length > 0) {
-          allErrors.push(...result.errors);
-        }
+  const handleStartPhotoRefresh = async () => {
+    setIsRefreshingPhotos(true);
+    
+    try {
+      const response = await supabase.functions.invoke('refresh-restaurant-photos', {
+        body: { action: 'start', batchSize: 5 },
+      });
 
-        setPhotoRefreshProgress({
-          processed: totalProcessed,
-          total: totalRestaurants,
-          photosDownloaded: totalPhotos,
-          errors: allErrors,
-        });
-
-        addLogEntry('restaurant', `📷 ${result.processed} restaurants, ${result.photosDownloaded} foto's`);
-
-        hasMore = result.hasMore || false;
-        offset = result.nextOffset || offset + batchSize;
-
-        // Small delay to prevent rate limiting
-        if (hasMore) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
+      if (response.error) {
+        throw new Error(response.error.message);
       }
 
-      addLogEntry('info', `✅ Klaar! ${totalProcessed} restaurants, ${totalPhotos} foto's`);
-      toast.success(`Foto's vernieuwd: ${totalPhotos} foto's voor ${totalProcessed} restaurants`);
-      
+      if (response.data?.job) {
+        setPhotoRefreshJob(response.data.job);
+        addLogEntry('info', '📸 Foto refresh gestart!');
+        toast.success('Foto refresh gestart! Dit draait op de achtergrond.');
+      }
     } catch (error: unknown) {
-      console.error('Refresh photos error:', error);
+      console.error('Start photo refresh error:', error);
       const errorMsg = error instanceof Error ? error.message : 'Er ging iets mis';
       addLogEntry('error', `❌ Foto refresh mislukt: ${errorMsg}`);
       toast.error(errorMsg);
-    } finally {
       setIsRefreshingPhotos(false);
     }
   };
+
+  const handleResumePhotoRefresh = async () => {
+    if (!photoRefreshJob) return;
+    setIsRefreshingPhotos(true);
+    
+    try {
+      const response = await supabase.functions.invoke('refresh-restaurant-photos', {
+        body: { action: 'resume', jobId: photoRefreshJob.id, batchSize: 5 },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      if (response.data?.job) {
+        setPhotoRefreshJob(response.data.job);
+        addLogEntry('info', '▶️ Foto refresh hervat!');
+        toast.success('Foto refresh hervat!');
+      }
+    } catch (error: unknown) {
+      console.error('Resume photo refresh error:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Er ging iets mis';
+      toast.error(errorMsg);
+      setIsRefreshingPhotos(false);
+    }
+  };
+
+  const handlePausePhotoRefresh = async () => {
+    if (!photoRefreshJob) return;
+    
+    try {
+      const response = await supabase.functions.invoke('refresh-restaurant-photos', {
+        body: { action: 'pause', jobId: photoRefreshJob.id },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message);
+      }
+
+      setPhotoRefreshJob(prev => prev ? { ...prev, status: 'paused' } : null);
+      setIsRefreshingPhotos(false);
+      addLogEntry('info', '⏸️ Foto refresh gepauzeerd');
+      toast.success('Foto refresh gepauzeerd');
+    } catch (error: unknown) {
+      console.error('Pause photo refresh error:', error);
+      const errorMsg = error instanceof Error ? error.message : 'Er ging iets mis';
+      toast.error(errorMsg);
+    }
+  };
+
+  // Realtime subscription for photo_refresh_jobs
+  useEffect(() => {
+    fetchPhotoJobStatus();
+    
+    const channel = supabase
+      .channel('photo-refresh-jobs-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'photo_refresh_jobs',
+        },
+        (payload) => {
+          const newJob = payload.new as PhotoRefreshJob;
+          setPhotoRefreshJob(newJob);
+          setIsRefreshingPhotos(newJob.status === 'running');
+          
+          if (newJob.status === 'completed') {
+            addLogEntry('info', `✅ Foto refresh voltooid! ${newJob.photos_downloaded} foto's`);
+            toast.success(`Foto refresh voltooid: ${newJob.photos_downloaded} foto's`);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchPhotoJobStatus, addLogEntry]);
 
   const handleStartBulkImport = async () => {
     setIsLoadingStatus(true);
@@ -597,54 +671,151 @@ export default function AdminImportPage() {
                   </CardTitle>
                   <CardDescription>
                     Download alle foto's opnieuw via Google Places API voor alle restaurants.
-                    <strong className="block mt-1 text-amber-600">⚠️ Let op: dit kan lang duren en kost API credits!</strong>
+                    <strong className="block mt-1 text-primary">✓ Draait op de achtergrond - pauseren en hervatten mogelijk!</strong>
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {photoRefreshProgress && (
-                    <div className="space-y-3 p-4 rounded-lg bg-muted">
+                  {photoRefreshJob && (
+                    <div className="space-y-4 p-4 rounded-lg bg-muted">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">Status</span>
+                        {photoRefreshJob.status === 'running' && (
+                          <Badge className="bg-blue-500"><Loader2 className="mr-1 h-3 w-3 animate-spin" /> Bezig</Badge>
+                        )}
+                        {photoRefreshJob.status === 'paused' && (
+                          <Badge variant="secondary"><Pause className="mr-1 h-3 w-3" /> Gepauzeerd</Badge>
+                        )}
+                        {photoRefreshJob.status === 'completed' && (
+                          <Badge className="bg-green-500"><CheckCircle className="mr-1 h-3 w-3" /> Voltooid</Badge>
+                        )}
+                        {photoRefreshJob.status === 'failed' && (
+                          <Badge variant="destructive"><XCircle className="mr-1 h-3 w-3" /> Mislukt</Badge>
+                        )}
+                      </div>
+
+                      {photoRefreshJob.last_restaurant_name && photoRefreshJob.status === 'running' && (
+                        <div className="flex items-center gap-2 p-2 rounded bg-primary/10 text-primary">
+                          <Camera className="h-4 w-4" />
+                          <span className="text-sm font-medium">Bezig met: {photoRefreshJob.last_restaurant_name}</span>
+                        </div>
+                      )}
+
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span>Voortgang</span>
-                          <span>{photoRefreshProgress.processed} / {photoRefreshProgress.total} restaurants</span>
+                          <span>{photoRefreshJob.processed_restaurants} / {photoRefreshJob.total_restaurants} restaurants</span>
                         </div>
                         <Progress 
-                          value={photoRefreshProgress.total > 0 
-                            ? (photoRefreshProgress.processed / photoRefreshProgress.total) * 100 
+                          value={photoRefreshJob.total_restaurants > 0 
+                            ? (photoRefreshJob.processed_restaurants / photoRefreshJob.total_restaurants) * 100 
                             : 0
                           } 
                         />
                       </div>
+
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div className="p-2 rounded bg-green-500/10 text-green-700">
-                          <div className="font-medium">{photoRefreshProgress.photosDownloaded}</div>
+                          <div className="font-medium">{photoRefreshJob.photos_downloaded}</div>
                           <div className="text-xs">Foto's gedownload</div>
                         </div>
                         <div className="p-2 rounded bg-red-500/10 text-red-700">
-                          <div className="font-medium">{photoRefreshProgress.errors.length}</div>
+                          <div className="font-medium">{photoRefreshJob.errors?.length || 0}</div>
                           <div className="text-xs">Fouten</div>
                         </div>
                       </div>
+
+                      {/* Completed restaurants with URLs */}
+                      {photoRefreshJob.completed_restaurants && photoRefreshJob.completed_restaurants.length > 0 && (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-sm font-medium text-green-600">
+                            <CheckCircle className="h-4 w-4" />
+                            Voltooide restaurants ({photoRefreshJob.completed_restaurants.length})
+                          </div>
+                          <ScrollArea className="h-48 rounded border bg-background/50">
+                            <div className="p-2 space-y-1">
+                              {photoRefreshJob.completed_restaurants.slice().reverse().map((restaurant) => (
+                                <div 
+                                  key={restaurant.id}
+                                  className="flex items-center justify-between p-2 rounded hover:bg-muted/50 text-sm"
+                                >
+                                  <div className="flex flex-col">
+                                    <span className="font-medium">{restaurant.name}</span>
+                                    <span className="text-xs text-muted-foreground">{restaurant.city} • {restaurant.photosCount} foto's</span>
+                                  </div>
+                                  <a 
+                                    href={restaurant.url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-xs text-primary hover:underline"
+                                  >
+                                    Bekijk →
+                                  </a>
+                                </div>
+                              ))}
+                            </div>
+                          </ScrollArea>
+                        </div>
+                      )}
+
+                      {photoRefreshJob.errors && photoRefreshJob.errors.length > 0 && (
+                        <div className="text-sm">
+                          <p className="font-medium text-destructive mb-1">
+                            Fouten ({photoRefreshJob.errors.length}):
+                          </p>
+                          <ul className="text-xs text-muted-foreground max-h-24 overflow-y-auto space-y-1 bg-destructive/5 p-2 rounded">
+                            {photoRefreshJob.errors.slice(-10).map((error, i) => (
+                              <li key={i} className="truncate font-mono">{error}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   )}
-                  <Button 
-                    onClick={handleRefreshPhotos} 
-                    disabled={isRefreshingPhotos}
-                    className="w-full"
-                    variant="outline"
-                  >
-                    {isRefreshingPhotos ? (
-                      <>
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                        Foto's downloaden...
-                      </>
+
+                  <div className="flex gap-2">
+                    {photoRefreshJob?.status === 'running' ? (
+                      <Button 
+                        onClick={handlePausePhotoRefresh}
+                        className="flex-1"
+                        variant="outline"
+                      >
+                        <Pause className="mr-2 h-4 w-4" />
+                        Pauzeren
+                      </Button>
+                    ) : photoRefreshJob?.status === 'paused' ? (
+                      <Button 
+                        onClick={handleResumePhotoRefresh}
+                        className="flex-1"
+                      >
+                        <Play className="mr-2 h-4 w-4" />
+                        Hervatten
+                      </Button>
                     ) : (
-                      <>
-                        <Camera className="mr-2 h-5 w-5" />
-                        Vernieuw Alle Foto's
-                      </>
+                      <Button 
+                        onClick={handleStartPhotoRefresh}
+                        className="flex-1"
+                        disabled={isRefreshingPhotos}
+                      >
+                        {isRefreshingPhotos ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Camera className="mr-2 h-4 w-4" />
+                        )}
+                        Start Foto Refresh
+                      </Button>
                     )}
-                  </Button>
+                    <Button 
+                      onClick={fetchPhotoJobStatus}
+                      variant="ghost"
+                      size="icon"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  <p className="text-xs text-muted-foreground">
+                    ⚠️ Dit kan veel API calls gebruiken. De import draait door op de server, ook als je deze pagina verlaat.
+                  </p>
                 </CardContent>
               </Card>
 
