@@ -424,6 +424,8 @@ export default function RestaurantPage() {
                   <ClaimButton 
                     restaurantId={restaurant.id} 
                     restaurantName={restaurant.name}
+                    restaurantSlug={restaurant.slug}
+                    citySlug={citySlug || ''}
                     isClaimed={restaurant.is_claimed || false}
                   />
                 </div>
