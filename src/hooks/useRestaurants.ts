@@ -85,13 +85,13 @@ export function useRestaurant(citySlug: string, restaurantSlug: string) {
 
       if (!city) throw new Error('City not found');
 
+      // Fetch restaurant data
       const { data, error } = await supabase
         .from('restaurants')
         .select(`
           *,
           city:cities(*),
-          cuisines:restaurant_cuisines(cuisine:cuisine_types(*)),
-          photos:restaurant_photos(*)
+          cuisines:restaurant_cuisines(cuisine:cuisine_types(*))
         `)
         .eq('slug', restaurantSlug)
         .eq('city_id', city.id)
@@ -99,9 +99,19 @@ export function useRestaurant(citySlug: string, restaurantSlug: string) {
 
       if (error) throw error;
 
+      // Fetch photos separately to avoid nested query limits
+      const { data: photos } = await supabase
+        .from('restaurant_photos')
+        .select('*')
+        .eq('restaurant_id', data.id)
+        .eq('is_approved', true)
+        .order('is_primary', { ascending: false })
+        .order('created_at', { ascending: true });
+
       return {
         ...data,
         cuisines: data.cuisines?.map((c: any) => c.cuisine) || [],
+        photos: photos || [],
       } as Restaurant;
     },
     enabled: !!citySlug && !!restaurantSlug,
