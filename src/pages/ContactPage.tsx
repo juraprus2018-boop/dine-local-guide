@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Mail, Phone, MapPin } from 'lucide-react';
+import { Mail, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import ReCaptcha, { ReCaptchaRef } from '@/components/ReCaptcha';
 import { verifyRecaptcha } from '@/hooks/useRecaptcha';
@@ -77,18 +77,6 @@ export default function ContactPage() {
                     <a href="mailto:info@happio.nl" className="text-muted-foreground hover:text-primary">
                       info@happio.nl
                     </a>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-start gap-4">
-                  <Phone className="h-6 w-6 text-primary mt-1" />
-                  <div>
-                    <h3 className="font-semibold">Telefoon</h3>
-                    <p className="text-muted-foreground">+31 (0)20 123 4567</p>
                   </div>
                 </div>
               </CardContent>
