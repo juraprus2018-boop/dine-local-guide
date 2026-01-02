@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import placeholderCity from '@/assets/placeholder-city.jpg';
 
 interface CityWithCount {
   id: string;
@@ -16,17 +17,6 @@ interface PopularCitiesSectionProps {
   cities: CityWithCount[];
   isLoading: boolean;
 }
-
-// Default city images
-const cityImages: Record<string, string> = {
-  amsterdam: 'https://images.unsplash.com/photo-1534351590666-13e3e96b5017?w=600&h=400&fit=crop',
-  rotterdam: 'https://images.unsplash.com/photo-1543269664-76bc3997d9ea?w=600&h=400&fit=crop',
-  'den-haag': 'https://images.unsplash.com/photo-1578916171728-46686eac8d58?w=600&h=400&fit=crop',
-  utrecht: 'https://images.unsplash.com/photo-1579616043939-66feae7e9df2?w=600&h=400&fit=crop',
-  eindhoven: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&h=400&fit=crop',
-  groningen: 'https://images.unsplash.com/photo-1600623471616-8c1966c91ff6?w=600&h=400&fit=crop',
-  default: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=600&h=400&fit=crop',
-};
 
 export function PopularCitiesSection({ cities, isLoading }: PopularCitiesSectionProps) {
   if (!isLoading && cities.length === 0) return null;
@@ -67,7 +57,7 @@ export function PopularCitiesSection({ cities, isLoading }: PopularCitiesSection
             ))
           ) : (
             cities.map((city, index) => {
-              const imageUrl = city.image_url || cityImages[city.slug] || cityImages.default;
+              const imageUrl = city.image_url || placeholderCity;
               const isFirst = index === 0;
               
               return (

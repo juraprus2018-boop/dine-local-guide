@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToggleFavorite, useIsFavorite } from '@/hooks/useRestaurants';
 import { cn } from '@/lib/utils';
 import type { Restaurant, PriceRange } from '@/types/database';
+import placeholderRestaurant from '@/assets/placeholder-restaurant.jpg';
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
@@ -69,7 +70,7 @@ export function RestaurantCard({ restaurant, className }: RestaurantCardProps) {
   };
 
   const citySlug = restaurant.city?.slug || 'nederland';
-  const imageUrl = restaurant.image_url || `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400&h=300&fit=crop`;
+  const imageUrl = restaurant.image_url || placeholderRestaurant;
 
   return (
     <Link to={`/${citySlug}/${restaurant.slug}`}>

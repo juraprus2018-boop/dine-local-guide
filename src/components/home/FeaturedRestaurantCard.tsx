@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { Restaurant } from '@/types/database';
+import placeholderRestaurant from '@/assets/placeholder-restaurant.jpg';
 
 interface FeaturedRestaurantCardProps {
   restaurant: Restaurant;
@@ -13,7 +14,7 @@ interface FeaturedRestaurantCardProps {
 
 export function FeaturedRestaurantCard({ restaurant, rank, className }: FeaturedRestaurantCardProps) {
   const citySlug = restaurant.city?.slug || 'nederland';
-  const imageUrl = restaurant.image_url || `https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=600&fit=crop`;
+  const imageUrl = restaurant.image_url || placeholderRestaurant;
 
   return (
     <Link 

@@ -27,6 +27,7 @@ import ReCaptcha, { ReCaptchaRef } from '@/components/ReCaptcha';
 import { verifyRecaptcha } from '@/hooks/useRecaptcha';
 import { supabase } from '@/integrations/supabase/client';
 import type { OpeningHours, DayHours } from '@/types/database';
+import placeholderRestaurant from '@/assets/placeholder-restaurant.jpg';
 
 const dayNames: Record<string, string> = {
   monday: 'Maandag',
@@ -138,7 +139,7 @@ export default function RestaurantPage() {
 
   const photos = restaurant.photos?.length 
     ? restaurant.photos 
-    : [{ id: '1', url: restaurant.image_url || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=400&fit=crop', caption: null }];
+    : [{ id: '1', url: restaurant.image_url || placeholderRestaurant, caption: null }];
 
   const handleFavoriteClick = () => {
     if (!user) {
