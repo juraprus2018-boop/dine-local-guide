@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Mail, Lock, User, Eye, EyeOff, ArrowLeft, CheckCircle, Inbox } from 'lucide-react';
 import { Layout } from '@/components/layout';
@@ -10,6 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import happioLogo from '@/assets/happio-logo.png';
+import ReCaptcha, { ReCaptchaRef } from '@/components/ReCaptcha';
+import { verifyRecaptcha } from '@/hooks/useRecaptcha';
 
 export default function AuthPage() {
   const [searchParams] = useSearchParams();
@@ -26,11 +28,15 @@ export default function AuthPage() {
   // Login form
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
+  const [loginRecaptchaToken, setLoginRecaptchaToken] = useState<string | null>(null);
+  const loginRecaptchaRef = useRef<ReCaptchaRef>(null);
 
   // Signup form
   const [signupEmail, setSignupEmail] = useState('');
   const [signupPassword, setSignupPassword] = useState('');
   const [signupName, setSignupName] = useState('');
+  const [signupRecaptchaToken, setSignupRecaptchaToken] = useState<string | null>(null);
+  const signupRecaptchaRef = useRef<ReCaptchaRef>(null);
 
   useEffect(() => {
     if (user && !loading) {
@@ -40,9 +46,25 @@ export default function AuthPage() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!loginRecaptchaToken) {
+      toast({ title: 'Bevestig dat je geen robot bent', variant: 'destructive' });
+      return;
+    }
+    
     setIsSubmitting(true);
 
     try {
+      // Verify reCAPTCHA
+      const isValid = await verifyRecaptcha(loginRecaptchaToken);
+      if (!isValid) {
+        toast({ title: 'reCAPTCHA verificatie mislukt', description: 'Probeer opnieuw.', variant: 'destructive' });
+        loginRecaptchaRef.current?.reset();
+        setLoginRecaptchaToken(null);
+        setIsSubmitting(false);
+        return;
+      }
+
       const { error } = await signIn(loginEmail, loginPassword);
       
       if (error) {
@@ -53,12 +75,16 @@ export default function AuthPage() {
         } else {
           toast({ title: 'Inloggen mislukt', description: error.message, variant: 'destructive' });
         }
+        loginRecaptchaRef.current?.reset();
+        setLoginRecaptchaToken(null);
       } else {
         toast({ title: 'Welkom terug!' });
         navigate('/');
       }
     } catch (error) {
       toast({ title: 'Er ging iets mis', variant: 'destructive' });
+      loginRecaptchaRef.current?.reset();
+      setLoginRecaptchaToken(null);
     } finally {
       setIsSubmitting(false);
     }
@@ -66,6 +92,12 @@ export default function AuthPage() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!signupRecaptchaToken) {
+      toast({ title: 'Bevestig dat je geen robot bent', variant: 'destructive' });
+      return;
+    }
+    
     setIsSubmitting(true);
 
     if (signupPassword.length < 6) {
@@ -75,6 +107,16 @@ export default function AuthPage() {
     }
 
     try {
+      // Verify reCAPTCHA
+      const isValid = await verifyRecaptcha(signupRecaptchaToken);
+      if (!isValid) {
+        toast({ title: 'reCAPTCHA verificatie mislukt', description: 'Probeer opnieuw.', variant: 'destructive' });
+        signupRecaptchaRef.current?.reset();
+        setSignupRecaptchaToken(null);
+        setIsSubmitting(false);
+        return;
+      }
+
       const { error } = await signUp(signupEmail, signupPassword, signupName);
       
       if (error) {
@@ -83,12 +125,16 @@ export default function AuthPage() {
         } else {
           toast({ title: 'Registratie mislukt', description: error.message, variant: 'destructive' });
         }
+        signupRecaptchaRef.current?.reset();
+        setSignupRecaptchaToken(null);
       } else {
         setRegisteredEmail(signupEmail);
         setShowVerificationMessage(true);
       }
     } catch (error) {
       toast({ title: 'Er ging iets mis', variant: 'destructive' });
+      signupRecaptchaRef.current?.reset();
+      setSignupRecaptchaToken(null);
     } finally {
       setIsSubmitting(false);
     }
@@ -251,7 +297,13 @@ export default function AuthPage() {
                       </div>
                     </div>
 
-                    <Button type="submit" className="w-full" disabled={isSubmitting}>
+                    <ReCaptcha
+                      ref={loginRecaptchaRef}
+                      onChange={setLoginRecaptchaToken}
+                      className="flex justify-center"
+                    />
+
+                    <Button type="submit" className="w-full" disabled={isSubmitting || !loginRecaptchaToken}>
                       {isSubmitting ? 'Bezig...' : 'Inloggen'}
                     </Button>
                   </form>
@@ -314,7 +366,13 @@ export default function AuthPage() {
                       </div>
                     </div>
 
-                    <Button type="submit" className="w-full" disabled={isSubmitting}>
+                    <ReCaptcha
+                      ref={signupRecaptchaRef}
+                      onChange={setSignupRecaptchaToken}
+                      className="flex justify-center"
+                    />
+
+                    <Button type="submit" className="w-full" disabled={isSubmitting || !signupRecaptchaToken}>
                       {isSubmitting ? 'Bezig...' : 'Account aanmaken'}
                     </Button>
 

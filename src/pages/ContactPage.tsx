@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Layout } from '@/components/layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Mail, Phone, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
+import ReCaptcha, { ReCaptchaRef } from '@/components/ReCaptcha';
+import { verifyRecaptcha } from '@/hooks/useRecaptcha';
 
 export default function ContactPage() {
   const [name, setName] = useState('');
@@ -14,10 +16,28 @@ export default function ContactPage() {
   const [subject, setSubject] = useState('');
   const [message, setMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+  const recaptchaRef = useRef<ReCaptchaRef>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!recaptchaToken) {
+      toast.error('Bevestig dat je geen robot bent');
+      return;
+    }
+    
     setIsSubmitting(true);
+    
+    // Verify reCAPTCHA
+    const isValid = await verifyRecaptcha(recaptchaToken);
+    if (!isValid) {
+      toast.error('reCAPTCHA verificatie mislukt. Probeer opnieuw.');
+      recaptchaRef.current?.reset();
+      setRecaptchaToken(null);
+      setIsSubmitting(false);
+      return;
+    }
     
     // Simulate form submission
     await new Promise(resolve => setTimeout(resolve, 1000));
@@ -27,6 +47,8 @@ export default function ContactPage() {
     setEmail('');
     setSubject('');
     setMessage('');
+    setRecaptchaToken(null);
+    recaptchaRef.current?.reset();
     setIsSubmitting(false);
   };
 
@@ -138,7 +160,13 @@ export default function ContactPage() {
                     />
                   </div>
 
-                  <Button type="submit" className="w-full" disabled={isSubmitting}>
+                  <ReCaptcha
+                    ref={recaptchaRef}
+                    onChange={setRecaptchaToken}
+                    className="flex justify-center"
+                  />
+
+                  <Button type="submit" className="w-full" disabled={isSubmitting || !recaptchaToken}>
                     {isSubmitting ? 'Verzenden...' : 'Verstuur bericht'}
                   </Button>
                 </form>
