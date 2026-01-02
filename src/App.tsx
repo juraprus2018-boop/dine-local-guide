@@ -25,6 +25,17 @@ import AdminRestaurantEditPage from "./pages/admin/AdminRestaurantEditPage";
 import AdminImportPage from "./pages/admin/AdminImportPage";
 import AdminClaimsPage from "./pages/admin/AdminClaimsPage";
 import AdminReviewsPage from "./pages/admin/AdminReviewsPage";
+import AboutPage from "./pages/AboutPage";
+import ContactPage from "./pages/ContactPage";
+import FAQPage from "./pages/FAQPage";
+import BlogPage from "./pages/BlogPage";
+import PrivacyPage from "./pages/PrivacyPage";
+import TermsPage from "./pages/TermsPage";
+import CookiesPage from "./pages/CookiesPage";
+import NewRestaurantsPage from "./pages/NewRestaurantsPage";
+import TopRatedPage from "./pages/TopRatedPage";
+import ClaimRestaurantPage from "./pages/ClaimRestaurantPage";
+import OwnerDashboardPage from "./pages/OwnerDashboardPage";
 import { ScrollToTop } from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
@@ -49,6 +60,17 @@ const App = () => (
             <Route path="/reviews" element={<ReviewsPage />} />
             <Route path="/foodwall" element={<FoodwallPage />} />
             <Route path="/aanmelden" element={<RegisterRestaurantPage />} />
+            <Route path="/claimen" element={<ClaimRestaurantPage />} />
+            <Route path="/eigenaar" element={<OwnerDashboardPage />} />
+            <Route path="/nieuw" element={<NewRestaurantsPage />} />
+            <Route path="/top" element={<TopRatedPage />} />
+            <Route path="/over" element={<AboutPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+            <Route path="/faq" element={<FAQPage />} />
+            <Route path="/blog" element={<BlogPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
+            <Route path="/voorwaarden" element={<TermsPage />} />
+            <Route path="/cookies" element={<CookiesPage />} />
             <Route path="/favorieten" element={<FavoritesPage />} />
             <Route path="/profiel" element={<ProfilePage />} />
             <Route path="/admin" element={<AdminPage />} />
