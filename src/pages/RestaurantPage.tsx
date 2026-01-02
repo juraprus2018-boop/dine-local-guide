@@ -20,6 +20,8 @@ import { useRestaurant, useReviews, useAddReview, useToggleFavorite, useIsFavori
 import { cn } from '@/lib/utils';
 import { PhotoUpload } from '@/components/restaurants/PhotoUpload';
 import { ClaimButton } from '@/components/restaurants/ClaimButton';
+import { ReviewPhotoUpload } from '@/components/reviews/ReviewPhotoUpload';
+import { supabase } from '@/integrations/supabase/client';
 import type { OpeningHours, DayHours } from '@/types/database';
 
 const dayNames: Record<string, string> = {
@@ -89,6 +91,7 @@ export default function RestaurantPage() {
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewTitle, setReviewTitle] = useState('');
   const [reviewContent, setReviewContent] = useState('');
+  const [reviewPhotos, setReviewPhotos] = useState<File[]>([]);
   const [guestName, setGuestName] = useState('');
   const [guestEmail, setGuestEmail] = useState('');
 
@@ -149,7 +152,7 @@ export default function RestaurantPage() {
     e.preventDefault();
     
     try {
-      await addReview.mutateAsync({
+      const result = await addReview.mutateAsync({
         restaurant_id: restaurant.id,
         rating: reviewRating,
         title: reviewTitle || undefined,
@@ -160,6 +163,33 @@ export default function RestaurantPage() {
         restaurant_name: restaurant.name,
         city_name: restaurant.city?.name,
       });
+
+      // Upload photos if any and user is logged in
+      if (reviewPhotos.length > 0 && user && result?.id) {
+        for (const photo of reviewPhotos) {
+          const fileExt = photo.name.split('.').pop();
+          const fileName = `reviews/${result.id}/${Date.now()}-${Math.random().toString(36).substr(2, 9)}.${fileExt}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from('restaurant-photos')
+            .upload(fileName, photo, {
+              cacheControl: '3600',
+              upsert: false,
+            });
+
+          if (!uploadError) {
+            const { data: { publicUrl } } = supabase.storage
+              .from('restaurant-photos')
+              .getPublicUrl(fileName);
+
+            await supabase.from('review_photos').insert({
+              review_id: result.id,
+              user_id: user.id,
+              url: publicUrl,
+            });
+          }
+        }
+      }
       
       toast({ 
         title: 'Review ontvangen! 📝',
@@ -168,6 +198,7 @@ export default function RestaurantPage() {
       setReviewRating(5);
       setReviewTitle('');
       setReviewContent('');
+      setReviewPhotos([]);
       setGuestName('');
       setGuestEmail('');
     } catch (error) {
@@ -473,6 +504,21 @@ export default function RestaurantPage() {
                             rows={4}
                           />
                         </div>
+
+                        {/* Photo upload - only for logged in users */}
+                        {user && (
+                          <div>
+                            <Label>Foto's toevoegen (optioneel)</Label>
+                            <div className="mt-2">
+                              <ReviewPhotoUpload
+                                photos={reviewPhotos}
+                                onPhotosChange={setReviewPhotos}
+                                maxPhotos={4}
+                                disabled={addReview.isPending}
+                              />
+                            </div>
+                          </div>
+                        )}
 
                         <Button type="submit" disabled={addReview.isPending}>
                           {addReview.isPending ? 'Bezig...' : 'Review plaatsen'}
