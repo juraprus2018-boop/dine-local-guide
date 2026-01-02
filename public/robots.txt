@@ -1,8 +1,16 @@
 User-agent: Googlebot
 Allow: /
+Disallow: /admin/
+Disallow: /auth
+Disallow: /profiel
+Disallow: /favorieten
 
 User-agent: Bingbot
 Allow: /
+Disallow: /admin/
+Disallow: /auth
+Disallow: /profiel
+Disallow: /favorieten
 
 User-agent: Twitterbot
 Allow: /
@@ -12,14 +20,11 @@ Allow: /
 
 User-agent: *
 Allow: /
-
-# Sitemap
-Sitemap: https://www.happio.nl/sitemap.xml
-# Disallow admin and private pages
 Disallow: /admin/
 Disallow: /auth
 Disallow: /profiel
 Disallow: /favorieten
 
-# Crawl delay
+Sitemap: https://www.happio.nl/sitemap.xml
+
 Crawl-delay: 1
