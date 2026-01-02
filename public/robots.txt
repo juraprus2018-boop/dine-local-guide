@@ -1,23 +1,3 @@
-User-agent: Googlebot
-Allow: /
-Disallow: /admin/
-Disallow: /auth
-Disallow: /profiel
-Disallow: /favorieten
-
-User-agent: Bingbot
-Allow: /
-Disallow: /admin/
-Disallow: /auth
-Disallow: /profiel
-Disallow: /favorieten
-
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
 User-agent: *
 Allow: /
 Disallow: /admin/
@@ -26,5 +6,3 @@ Disallow: /profiel
 Disallow: /favorieten
 
 Sitemap: https://www.happio.nl/sitemap.xml
-
-Crawl-delay: 1
