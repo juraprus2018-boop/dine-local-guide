@@ -7,7 +7,6 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Store, Star, MessageSquare, Camera, Settings } from 'lucide-react';
 import { AnalyticsCard } from '@/components/dashboard/AnalyticsCard';
-import { AdManagementCard } from '@/components/dashboard/AdManagementCard';
 
 export default function OwnerDashboardPage() {
   const { user } = useAuth();
@@ -126,9 +125,6 @@ export default function OwnerDashboardPage() {
 
                 {/* Analytics */}
                 <AnalyticsCard restaurantId={restaurant.id} restaurantName={restaurant.name} />
-
-                {/* Ad Management */}
-                <AdManagementCard restaurantId={restaurant.id} restaurantName={restaurant.name} />
               </div>
             ))}
           </div>

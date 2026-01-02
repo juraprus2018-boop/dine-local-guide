@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Megaphone, Plus, Trash2, Edit, Check, X } from 'lucide-react';
+import { Layout } from '@/components/layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,51 +24,65 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-
-interface AdManagementCardProps {
-  restaurantId: string;
-  restaurantName: string;
-}
+import { Link } from 'react-router-dom';
 
 const placementLabels: Record<string, string> = {
-  homepage: 'Homepage',
-  city: 'Stadspagina',
+  homepage: 'Homepage banner',
+  city: 'Stadspagina banner',
   detail_sidebar: 'Restaurant sidebar',
   detail_content: 'Restaurant content',
 };
 
-export function AdManagementCard({ restaurantId, restaurantName }: AdManagementCardProps) {
+export default function AdminAdsPage() {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAd, setEditingAd] = useState<any>(null);
   
   const [formData, setFormData] = useState({
-    placement_type: 'detail_sidebar',
+    placement_type: 'homepage',
     ad_code: '',
     start_date: '',
     end_date: '',
     is_active: true,
   });
 
+  // Check if user is admin
+  const { data: isAdmin, isLoading: checkingAdmin } = useQuery({
+    queryKey: ['is-admin', user?.id],
+    queryFn: async () => {
+      if (!user) return false;
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'admin')
+        .maybeSingle();
+      
+      return !!data;
+    },
+    enabled: !!user,
+  });
+
   const { data: adPlacements, isLoading } = useQuery({
-    queryKey: ['ad-placements', restaurantId],
+    queryKey: ['all-ad-placements'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('ad_placements')
         .select('*')
-        .eq('restaurant_id', restaurantId)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
       return data;
     },
+    enabled: isAdmin,
   });
 
   const createAdMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
       const { error } = await supabase.from('ad_placements').insert({
-        restaurant_id: restaurantId,
         placement_type: data.placement_type,
         ad_code: data.ad_code || null,
         start_date: data.start_date || null,
@@ -77,7 +92,7 @@ export function AdManagementCard({ restaurantId, restaurantName }: AdManagementC
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ad-placements', restaurantId] });
+      queryClient.invalidateQueries({ queryKey: ['all-ad-placements'] });
       setIsDialogOpen(false);
       resetForm();
       toast.success('Advertentie toegevoegd');
@@ -96,7 +111,7 @@ export function AdManagementCard({ restaurantId, restaurantName }: AdManagementC
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ad-placements', restaurantId] });
+      queryClient.invalidateQueries({ queryKey: ['all-ad-placements'] });
       setEditingAd(null);
       setIsDialogOpen(false);
       resetForm();
@@ -116,7 +131,7 @@ export function AdManagementCard({ restaurantId, restaurantName }: AdManagementC
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['ad-placements', restaurantId] });
+      queryClient.invalidateQueries({ queryKey: ['all-ad-placements'] });
       toast.success('Advertentie verwijderd');
     },
     onError: () => {
@@ -126,7 +141,7 @@ export function AdManagementCard({ restaurantId, restaurantName }: AdManagementC
 
   const resetForm = () => {
     setFormData({
-      placement_type: 'detail_sidebar',
+      placement_type: 'homepage',
       ad_code: '',
       start_date: '',
       end_date: '',
@@ -160,25 +175,61 @@ export function AdManagementCard({ restaurantId, restaurantName }: AdManagementC
     updateAdMutation.mutate({ id, data: { is_active: !currentStatus } });
   };
 
+  if (!user) {
+    return (
+      <Layout title="Admin - Advertenties">
+        <div className="container-wide py-16 text-center">
+          <h1 className="text-2xl font-semibold">Log in om verder te gaan</h1>
+          <Button asChild className="mt-4">
+            <Link to="/auth">Inloggen</Link>
+          </Button>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (checkingAdmin) {
+    return (
+      <Layout title="Admin - Advertenties">
+        <div className="container-wide py-16">
+          <div className="h-8 w-48 skeleton rounded mb-4" />
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <Layout title="Geen toegang">
+        <div className="container-wide py-16 text-center">
+          <h1 className="text-2xl font-semibold">Geen toegang</h1>
+          <p className="text-muted-foreground mt-2">
+            Je hebt geen toegang tot deze pagina.
+          </p>
+          <Button asChild className="mt-4">
+            <Link to="/">Terug naar home</Link>
+          </Button>
+        </div>
+      </Layout>
+    );
+  }
+
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
+    <Layout title="Admin - Advertenties beheren">
+      <div className="container-wide py-12">
+        <div className="flex items-center justify-between mb-8">
           <div>
-            <CardTitle className="flex items-center gap-2">
-              <Megaphone className="h-5 w-5 text-primary" />
-              Google Ads beheer
-            </CardTitle>
-            <CardDescription className="mt-1">
-              Plaats advertenties op verschillende locaties
-            </CardDescription>
+            <h1 className="font-display text-3xl font-bold">Advertenties beheren</h1>
+            <p className="mt-2 text-muted-foreground">
+              Beheer Google Ads plaatsingen op de website
+            </p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={(open) => {
             setIsDialogOpen(open);
             if (!open) resetForm();
           }}>
             <DialogTrigger asChild>
-              <Button size="sm" className="gap-2">
+              <Button className="gap-2">
                 <Plus className="h-4 w-4" />
                 Nieuwe advertentie
               </Button>
@@ -266,68 +317,80 @@ export function AdManagementCard({ restaurantId, restaurantName }: AdManagementC
             </DialogContent>
           </Dialog>
         </div>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <div className="space-y-3">
-            {[1, 2].map((i) => (
-              <div key={i} className="h-16 skeleton rounded-lg" />
-            ))}
-          </div>
-        ) : adPlacements && adPlacements.length > 0 ? (
-          <div className="space-y-3">
-            {adPlacements.map((ad) => (
-              <div
-                key={ad.id}
-                className="flex items-center justify-between p-3 border rounded-lg"
-              >
-                <div className="flex items-center gap-3">
-                  <Badge variant={ad.is_active ? 'default' : 'secondary'}>
-                    {ad.is_active ? 'Actief' : 'Inactief'}
-                  </Badge>
-                  <div>
-                    <p className="font-medium">{placementLabels[ad.placement_type]}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {ad.start_date && ad.end_date 
-                        ? `${ad.start_date} - ${ad.end_date}`
-                        : 'Geen datum ingesteld'}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => toggleActive(ad.id, ad.is_active)}
-                  >
-                    {ad.is_active ? <X className="h-4 w-4" /> : <Check className="h-4 w-4" />}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleEdit(ad)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => deleteAdMutation.mutate(ad.id)}
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Megaphone className="h-5 w-5 text-primary" />
+              Alle advertenties
+            </CardTitle>
+            <CardDescription>
+              Beheer advertentieplaatsingen op homepage, stadspagina's en restaurantpagina's
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-16 skeleton rounded-lg" />
+                ))}
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8 text-muted-foreground">
-            <Megaphone className="h-12 w-12 mx-auto mb-3 opacity-50" />
-            <p>Nog geen advertenties</p>
-            <p className="text-sm">Voeg je eerste Google Ads plaatsing toe</p>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+            ) : adPlacements && adPlacements.length > 0 ? (
+              <div className="space-y-3">
+                {adPlacements.map((ad) => (
+                  <div
+                    key={ad.id}
+                    className="flex items-center justify-between p-4 border rounded-lg"
+                  >
+                    <div className="flex items-center gap-4">
+                      <Badge variant={ad.is_active ? 'default' : 'secondary'}>
+                        {ad.is_active ? 'Actief' : 'Inactief'}
+                      </Badge>
+                      <div>
+                        <p className="font-medium">{placementLabels[ad.placement_type]}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {ad.start_date && ad.end_date 
+                            ? `${ad.start_date} - ${ad.end_date}`
+                            : 'Geen datum ingesteld'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleActive(ad.id, ad.is_active)}
+                      >
+                        {ad.is_active ? 'Deactiveren' : 'Activeren'}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEdit(ad)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => deleteAdMutation.mutate(ad.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12 text-muted-foreground">
+                <Megaphone className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                <p>Nog geen advertenties</p>
+                <p className="text-sm">Voeg je eerste Google Ads plaatsing toe</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </Layout>
   );
 }
