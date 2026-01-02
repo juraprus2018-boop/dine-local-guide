@@ -1,4 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
+import NotFound from './NotFound';
 import { useState, useEffect, useRef } from 'react';
 import {
   MapPin, Phone, Globe, Clock, Star, Heart, Share2, 
@@ -122,19 +123,7 @@ export default function RestaurantPage() {
   }
 
   if (!restaurant) {
-    return (
-      <Layout title="Restaurant niet gevonden">
-        <div className="container-wide py-16 text-center">
-          <h1 className="text-2xl font-semibold">Restaurant niet gevonden</h1>
-          <p className="mt-2 text-muted-foreground">
-            We konden dit restaurant niet vinden.
-          </p>
-          <Button asChild className="mt-6">
-            <Link to="/">Terug naar home</Link>
-          </Button>
-        </div>
-      </Layout>
-    );
+    return <NotFound />;
   }
 
   const photos = restaurant.photos?.length 
