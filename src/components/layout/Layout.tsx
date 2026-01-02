@@ -11,7 +11,7 @@ interface LayoutProps {
   noFooter?: boolean;
   image?: string;
   type?: 'website' | 'article' | 'restaurant';
-  jsonLd?: object;
+  jsonLd?: object | object[];
   noIndex?: boolean;
 }
 
@@ -97,9 +97,17 @@ export function Layout({
           {JSON.stringify(websiteSchema)}
         </script>
         {jsonLd && (
-          <script type="application/ld+json">
-            {JSON.stringify(jsonLd)}
-          </script>
+          Array.isArray(jsonLd) ? (
+            jsonLd.map((schema, index) => (
+              <script key={index} type="application/ld+json">
+                {JSON.stringify(schema)}
+              </script>
+            ))
+          ) : (
+            <script type="application/ld+json">
+              {JSON.stringify(jsonLd)}
+            </script>
+          )
         )}
       </Helmet>
       <div className="flex min-h-screen flex-col">
