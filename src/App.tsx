@@ -63,6 +63,7 @@ const App = () => (
             <Route path="/foodwall" element={<FoodwallPage />} />
             <Route path="/aanmelden" element={<RegisterRestaurantPage />} />
             <Route path="/claimen" element={<ClaimRestaurantPage />} />
+            <Route path="/claimen/:citySlug/:restaurantSlug" element={<ClaimRestaurantPage />} />
             <Route path="/eigenaar" element={<OwnerDashboardPage />} />
             <Route path="/nieuw" element={<NewRestaurantsPage />} />
             <Route path="/top" element={<TopRatedPage />} />
