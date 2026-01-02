@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { Menu, X, Heart, User, LogOut, Settings, MapPin, Search, MessageSquare } from 'lucide-react';
+import { Menu, X, Heart, User, LogOut, Settings, MapPin, Search, MessageSquare, Camera } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -79,6 +79,15 @@ export function Header() {
               className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               Ontdek
+            </Link>
+            <Link 
+              to="/foodwall" 
+              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <span className="flex items-center gap-1.5">
+                <Camera className="h-4 w-4" />
+                Foodwall
+              </span>
             </Link>
             <Link 
               to="/reviews" 
@@ -227,6 +236,14 @@ export function Header() {
               onClick={() => setMobileMenuOpen(false)}
             >
               Keukens
+            </Link>
+            <Link
+              to="/foodwall"
+              className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium hover:bg-muted"
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              <Camera className="h-4 w-4" />
+              Foodwall
             </Link>
             <Link
               to="/reviews"
