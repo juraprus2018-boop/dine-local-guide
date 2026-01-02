@@ -188,16 +188,10 @@ export default function FoodwallPage() {
               <p className="text-muted-foreground mb-6">
                 Wees de eerste die een food foto deelt!
               </p>
-              {user ? (
-                <Button onClick={() => setCreateDialogOpen(true)}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Eerste post maken
-                </Button>
-              ) : (
-                <Button asChild>
-                  <Link to="/auth">Log in om te posten</Link>
-                </Button>
-              )}
+              <Button onClick={() => setCreateDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Plaats je foodwall bericht
+              </Button>
             </div>
           )}
         </div>
