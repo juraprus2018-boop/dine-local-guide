@@ -60,12 +60,38 @@ export function useAuth() {
       }
     });
 
-    // THEN initial session
+    // THEN initial session (with recovery for corrupted refresh tokens)
+    const clearCorruptedSession = () => {
+      try {
+        // Remove any persisted Supabase auth tokens for this origin
+        Object.keys(localStorage)
+          .filter((k) => k.startsWith('sb-') && k.endsWith('-auth-token'))
+          .forEach((k) => localStorage.removeItem(k));
+      } catch {
+        // ignore
+      }
+    };
+
     supabase.auth
       .getSession()
-      .then(async ({ data: { session } }) => {
+      .then(async ({ data: { session }, error }) => {
         if (!isMounted) return;
-        
+
+        // If we have a session, proactively verify it can be refreshed.
+        // When a stale refresh token exists, Supabase throws refresh_token_not_found.
+        if (session) {
+          const { error: refreshError } = await supabase.auth.refreshSession();
+          if ((refreshError as any)?.code === 'refresh_token_not_found') {
+            clearCorruptedSession();
+            await supabase.auth.signOut();
+            session = null;
+          }
+        }
+
+        if (error) {
+          console.warn('Auth getSession error:', error);
+        }
+
         setSession(session);
         setUser(session?.user ?? null);
 
