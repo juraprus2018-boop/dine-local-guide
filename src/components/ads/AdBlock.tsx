@@ -1,19 +1,39 @@
 import { useEffect, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
 interface AdBlockProps {
   placementType: 'homepage' | 'city' | 'detail_sidebar' | 'detail_content';
   className?: string;
-  adCode?: string;
 }
 
-export function AdBlock({ placementType, className, adCode }: AdBlockProps) {
+export function AdBlock({ placementType, className }: AdBlockProps) {
   const adRef = useRef<HTMLDivElement>(null);
+
+  // Fetch active ad for this placement type
+  const { data: adPlacement } = useQuery({
+    queryKey: ['ad-placement', placementType],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('ad_placements')
+        .select('*')
+        .eq('placement_type', placementType)
+        .eq('is_active', true)
+        .or(`start_date.is.null,start_date.lte.${new Date().toISOString().split('T')[0]}`)
+        .or(`end_date.is.null,end_date.gte.${new Date().toISOString().split('T')[0]}`)
+        .limit(1)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
+    },
+  });
 
   useEffect(() => {
     // If there's ad code, inject it
-    if (adCode && adRef.current) {
-      adRef.current.innerHTML = adCode;
+    if (adPlacement?.ad_code && adRef.current) {
+      adRef.current.innerHTML = adPlacement.ad_code;
       
       // Execute any scripts in the ad code
       const scripts = adRef.current.querySelectorAll('script');
@@ -26,37 +46,18 @@ export function AdBlock({ placementType, className, adCode }: AdBlockProps) {
         script.parentNode?.replaceChild(newScript, script);
       });
     }
-  }, [adCode]);
+  }, [adPlacement?.ad_code]);
 
-  // Placeholder styles based on placement type
-  const placementStyles = {
-    homepage: 'h-[250px] w-full',
-    city: 'h-[250px] w-full',
-    detail_sidebar: 'h-[300px] w-full',
-    detail_content: 'h-[90px] w-full',
-  };
-
-  if (!adCode) {
-    // Show placeholder when no ad is configured
-    return (
-      <div 
-        className={cn(
-          'bg-muted/50 border border-dashed border-muted-foreground/20 rounded-lg flex items-center justify-center text-muted-foreground/50 text-sm',
-          placementStyles[placementType],
-          className
-        )}
-      >
-        <span>Advertentieruimte</span>
-      </div>
-    );
+  // Don't render anything if no ad is configured
+  if (!adPlacement?.ad_code) {
+    return null;
   }
 
   return (
     <div 
       ref={adRef}
       className={cn(
-        'ad-container overflow-hidden rounded-lg',
-        placementStyles[placementType],
+        'ad-container overflow-hidden',
         className
       )}
     />
