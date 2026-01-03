@@ -236,8 +236,14 @@ export default function RestaurantPage() {
       setGuestEmail('');
       setRecaptchaToken(null);
       recaptchaRef.current?.reset();
-    } catch (error) {
-      toast({ title: 'Er ging iets mis', variant: 'destructive' });
+    } catch (error: any) {
+      const message =
+        error?.message ||
+        error?.error_description ||
+        (typeof error === 'string' ? error : JSON.stringify(error));
+
+      console.error('Review submission error:', error);
+      toast({ title: 'Er ging iets mis', description: message, variant: 'destructive' });
     }
   };
 
