@@ -377,12 +377,12 @@ function CreatePostDialog({ onSuccess }: { onSuccess: () => void }) {
   };
 
   return (
-    <DialogContent className="sm:max-w-md">
+    <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
       <DialogHeader>
         <DialogTitle>Deel je food moment</DialogTitle>
       </DialogHeader>
 
-      <div className="space-y-4">
+      <div className="space-y-4 pb-4">
         {/* Photo upload */}
         {!preview ? (
           <div
