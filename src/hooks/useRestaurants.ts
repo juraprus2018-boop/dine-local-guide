@@ -258,16 +258,36 @@ export function useAddReview() {
       const { restaurant_name, city_name, user_id, ...restData } = review;
 
       // IMPORTANT:
-      // Our database only allows SELECT for approved reviews. A newly inserted review is unapproved,
-      // so doing `.select().single()` after insert can fail due to RLS.
-      // Solution: generate the UUID client-side and insert without selecting the row back.
+      // We cannot read back the inserted review because SELECT is only allowed for approved reviews.
+      // Also: make sure the inserted `user_id` matches the current auth session, otherwise RLS blocks it.
       const reviewId = crypto.randomUUID();
 
-      const reviewData = {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      const sessionUserId = session?.user?.id ?? null;
+
+      const reviewData: any = {
         id: reviewId,
         ...restData,
-        user_id: user_id || null, // Explicitly set to null for guest reviews
       };
+
+      if (sessionUserId) {
+        // Authenticated review
+        reviewData.user_id = sessionUserId;
+        reviewData.guest_name = null;
+        reviewData.guest_email = null;
+      } else {
+        // Guest review
+        reviewData.user_id = null;
+        reviewData.guest_name = review.guest_name ?? null;
+        reviewData.guest_email = review.guest_email ?? null;
+
+        if (!reviewData.guest_email) {
+          throw new Error('Vul je email in om als gast een review te plaatsen.');
+        }
+      }
 
       console.log('Submitting review:', { ...reviewData, restaurant_name, city_name });
 
