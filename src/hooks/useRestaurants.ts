@@ -256,29 +256,31 @@ export function useAddReview() {
       city_name?: string;
     }) => {
       const { restaurant_name, city_name, user_id, ...restData } = review;
-      
-      // Prepare review data - ensure proper user_id handling for RLS policies
+
+      // IMPORTANT:
+      // Our database only allows SELECT for approved reviews. A newly inserted review is unapproved,
+      // so doing `.select().single()` after insert can fail due to RLS.
+      // Solution: generate the UUID client-side and insert without selecting the row back.
+      const reviewId = crypto.randomUUID();
+
       const reviewData = {
+        id: reviewId,
         ...restData,
         user_id: user_id || null, // Explicitly set to null for guest reviews
       };
-      
+
       console.log('Submitting review:', { ...reviewData, restaurant_name, city_name });
-      
-      const { data, error } = await supabase
-        .from('reviews')
-        .insert(reviewData)
-        .select()
-        .single();
+
+      const { error } = await supabase.from('reviews').insert(reviewData);
 
       if (error) {
         console.error('Review insert error:', error);
         throw error;
       }
 
-      // Send review notification emails
+      // Send review notification emails (best-effort)
       try {
-        await supabase.functions.invoke('send-email', {
+        const { error: emailError } = await supabase.functions.invoke('send-email', {
           body: {
             type: 'review',
             data: {
@@ -291,12 +293,16 @@ export function useAddReview() {
             },
           },
         });
+
+        if (emailError) {
+          console.error('Failed to send review notification email:', emailError);
+        }
       } catch (emailError) {
-        console.error('Failed to send review notification email:', emailError);
+        console.error('Failed to send review notification email (exception):', emailError);
         // Don't fail the review if email fails
       }
 
-      return data;
+      return { id: reviewId, restaurant_id: review.restaurant_id };
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['reviews', data.restaurant_id] });
