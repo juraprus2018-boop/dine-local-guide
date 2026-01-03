@@ -244,6 +244,10 @@ export default function RestaurantPage() {
 
       console.error('Review submission error:', error);
       toast({ title: 'Er ging iets mis', description: message, variant: 'destructive' });
+
+      // Ensure the user can try again without hitting "timeout-or-duplicate"
+      recaptchaRef.current?.reset();
+      setRecaptchaToken(null);
     }
   };
 
