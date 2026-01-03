@@ -143,12 +143,14 @@ export default function ReviewsPage() {
     const restaurant = restaurants.find(r => r.id === selectedRestaurant);
     
     try {
+      // Pass user_id only if user is authenticated, otherwise pass guest info
+      // The hook will fetch the actual session user_id for authenticated users
       const result = await addReview.mutateAsync({
         restaurant_id: selectedRestaurant,
         rating: reviewRating,
         title: reviewTitle || undefined,
         content: reviewContent || undefined,
-        user_id: user?.id,
+        user_id: user?.id, // Hook will verify with session
         guest_name: !user ? guestName : undefined,
         guest_email: !user ? guestEmail : undefined,
         restaurant_name: restaurant?.name,
