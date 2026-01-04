@@ -369,22 +369,28 @@ export default function AdminImportPage() {
   };
 
   const handleResumePhotoRefresh = async () => {
-    if (!photoRefreshJob) return;
     setIsRefreshingPhotos(true);
     
     try {
+      // Always call resume - the backend will find the latest non-completed job
       const response = await supabase.functions.invoke('refresh-restaurant-photos', {
-        body: { action: 'resume', jobId: photoRefreshJob.id, batchSize: 5 },
+        body: { action: 'resume', jobId: photoRefreshJob?.id, batchSize: 5 },
       });
 
       if (response.error) {
         throw new Error(response.error.message);
       }
 
+      if (response.data?.error) {
+        throw new Error(response.data.message || response.data.error);
+      }
+
       if (response.data?.job) {
         setPhotoRefreshJob(response.data.job);
-        addLogEntry('info', '▶️ Foto refresh hervat!');
-        toast.success('Foto refresh hervat!');
+        const processed = response.data.job.processed_restaurants || 0;
+        const total = response.data.job.total_restaurants || 0;
+        addLogEntry('info', `▶️ Foto refresh hervat! (${processed}/${total} al verwerkt)`);
+        toast.success(`Foto refresh hervat vanaf ${processed} restaurants!`);
       }
     } catch (error: unknown) {
       console.error('Resume photo refresh error:', error);
