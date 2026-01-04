@@ -1,1 +1,5 @@
+# Sitemap redirect to Supabase Edge Function
+/sitemap.xml https://eoxcxesrejwbczhyjjsf.supabase.co/functions/v1/sitemap 200
+
+# SPA fallback
 /* /index.html 200
