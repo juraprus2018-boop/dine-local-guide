@@ -84,13 +84,37 @@ export default function CityPage() {
     return <NotFound />;
   }
 
-  // City JSON-LD structured data
-  const cityJsonLd = {
+  // City/Place JSON-LD structured data
+  const placeJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Place",
+    "@id": `https://www.happio.nl/${city.slug}#place`,
+    "name": city.name,
+    "description": city.meta_description || `Ontdek de beste restaurants in ${city.name}`,
+    "url": `https://www.happio.nl/${city.slug}`,
+    "image": city.image_url || undefined,
+    "address": {
+      "@type": "PostalAddress",
+      "addressLocality": city.name,
+      "addressRegion": city.province,
+      "addressCountry": "NL"
+    },
+    ...(city.latitude && city.longitude ? {
+      "geo": {
+        "@type": "GeoCoordinates",
+        "latitude": city.latitude,
+        "longitude": city.longitude
+      }
+    } : {})
+  };
+
+  // ItemList JSON-LD for restaurant list
+  const itemListJsonLd = {
     "@context": "https://schema.org",
     "@type": "ItemList",
     "name": `Restaurants in ${city.name}`,
     "description": city.meta_description || `Ontdek de beste restaurants in ${city.name}`,
-    "url": `https://happio.nl/${city.slug}`,
+    "url": `https://www.happio.nl/${city.slug}`,
     "numberOfItems": restaurants.length,
     "itemListElement": restaurants.slice(0, 10).map((r, i) => ({
       "@type": "ListItem",
@@ -98,12 +122,21 @@ export default function CityPage() {
       "item": {
         "@type": "Restaurant",
         "name": r.name,
-        "url": `https://happio.nl/${city.slug}/${r.slug}`,
+        "url": `https://www.happio.nl/${city.slug}/${r.slug}`,
+        "image": r.image_url || undefined,
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": r.address,
+          "addressLocality": city.name,
+          "addressCountry": "NL"
+        },
         ...(r.rating ? {
           "aggregateRating": {
             "@type": "AggregateRating",
             "ratingValue": Number(r.rating).toFixed(1),
-            "reviewCount": r.review_count || 0
+            "reviewCount": r.review_count || 0,
+            "bestRating": 5,
+            "worstRating": 1
           }
         } : {})
       }
@@ -119,19 +152,19 @@ export default function CityPage() {
         "@type": "ListItem",
         "position": 1,
         "name": "Home",
-        "item": "https://happio.nl/"
+        "item": "https://www.happio.nl/"
       },
       {
         "@type": "ListItem",
         "position": 2,
         "name": "Steden",
-        "item": "https://happio.nl/ontdek"
+        "item": "https://www.happio.nl/ontdek"
       },
       {
         "@type": "ListItem",
         "position": 3,
         "name": city.name,
-        "item": `https://happio.nl/${city.slug}`
+        "item": `https://www.happio.nl/${city.slug}`
       }
     ]
   };
@@ -141,7 +174,7 @@ export default function CityPage() {
       title={`Restaurants in ${city.name} - ${city.province}`}
       description={city.meta_description || `Ontdek de ${restaurants.length} beste restaurants in ${city.name}, ${city.province}. Lees reviews, bekijk foto's en vind jouw perfecte eetplek.`}
       image={city.image_url || undefined}
-      jsonLd={[cityJsonLd, breadcrumbJsonLd]}
+      jsonLd={[placeJsonLd, itemListJsonLd, breadcrumbJsonLd]}
     >
       {/* Hero */}
       <section className="bg-gradient-to-b from-secondary/50 to-background py-8 md:py-12">

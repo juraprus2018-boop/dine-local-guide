@@ -253,19 +253,22 @@ export default function RestaurantPage() {
 
   const isOpen = isOpenNow(restaurant.opening_hours);
 
-  // Restaurant JSON-LD structured data
+  // Restaurant JSON-LD structured data (combined Restaurant + LocalBusiness)
   const restaurantJsonLd = {
     "@context": "https://schema.org",
-    "@type": "Restaurant",
+    "@type": ["Restaurant", "LocalBusiness", "FoodEstablishment"],
+    "@id": `https://www.happio.nl/${citySlug}/${restaurantSlug}#restaurant`,
     "name": restaurant.name,
     "description": restaurant.description || `${restaurant.name} in ${restaurant.city?.name}`,
-    "url": `https://happio.nl/${citySlug}/${restaurantSlug}`,
-    "image": photos[0]?.url || restaurant.image_url,
+    "url": `https://www.happio.nl/${citySlug}/${restaurantSlug}`,
+    "image": photos.map(p => p.url),
+    "logo": photos[0]?.url || restaurant.image_url,
     "address": {
       "@type": "PostalAddress",
       "streetAddress": restaurant.address,
       "postalCode": restaurant.postal_code,
       "addressLocality": restaurant.city?.name,
+      "addressRegion": restaurant.city?.province || undefined,
       "addressCountry": "NL"
     },
     "geo": {
@@ -274,8 +277,15 @@ export default function RestaurantPage() {
       "longitude": restaurant.longitude
     },
     "telephone": restaurant.phone || undefined,
+    "email": restaurant.email || undefined,
     "priceRange": restaurant.price_range || undefined,
     "servesCuisine": restaurant.cuisines?.map(c => c.name) || undefined,
+    "acceptsReservations": true,
+    "currenciesAccepted": "EUR",
+    "paymentAccepted": "Cash, Credit Card, Debit Card",
+    "hasMenu": restaurant.website ? `${restaurant.website}/menu` : undefined,
+    ...(restaurant.website ? { "sameAs": [restaurant.website] } : {}),
+    ...(restaurant.is_verified ? { "isVerified": true } : {}),
     ...(restaurant.rating && restaurant.review_count && restaurant.review_count > 0 ? {
       "aggregateRating": {
         "@type": "AggregateRating",
@@ -284,6 +294,23 @@ export default function RestaurantPage() {
         "bestRating": 5,
         "worstRating": 1
       }
+    } : {}),
+    ...(reviews && reviews.length > 0 ? {
+      "review": reviews.slice(0, 5).map(review => ({
+        "@type": "Review",
+        "reviewRating": {
+          "@type": "Rating",
+          "ratingValue": review.rating,
+          "bestRating": 5,
+          "worstRating": 1
+        },
+        "author": {
+          "@type": "Person",
+          "name": review.guest_name || "Happio gebruiker"
+        },
+        "datePublished": review.created_at?.split('T')[0],
+        "reviewBody": review.content || review.title || undefined
+      }))
     } : {}),
     ...(restaurant.opening_hours ? {
       "openingHoursSpecification": Object.entries(restaurant.opening_hours).map(([day, hours]) => ({
