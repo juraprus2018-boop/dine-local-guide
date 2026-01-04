@@ -3,6 +3,9 @@
   RewriteEngine On
   RewriteBase /
 
+  # Sitemap redirect to Supabase Edge Function
+  RewriteRule ^sitemap\.xml$ https://eoxcxesrejwbczhyjjsf.supabase.co/functions/v1/sitemap [R=301,L]
+
   # Don't rewrite existing files/folders
   RewriteCond %{REQUEST_FILENAME} -f [OR]
   RewriteCond %{REQUEST_FILENAME} -d
