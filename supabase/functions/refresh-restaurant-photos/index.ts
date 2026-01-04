@@ -155,25 +155,45 @@ serve(async (req) => {
 
       let job;
 
-      if (action === 'resume' && jobId) {
-        // Resume existing job
+      // Always try to find an existing job first (either by ID or latest paused/running)
+      if (jobId) {
         const { data: existingJob } = await supabase
           .from('photo_refresh_jobs')
           .select('*')
           .eq('id', jobId)
           .maybeSingle();
-
-        if (existingJob) {
-          await supabase
-            .from('photo_refresh_jobs')
-            .update({ status: 'running' })
-            .eq('id', jobId);
-          job = { ...existingJob, status: 'running' };
+        
+        if (existingJob && existingJob.status !== 'completed') {
+          job = existingJob;
+        }
+      }
+      
+      // If no specific job found, look for the latest non-completed job
+      if (!job) {
+        const { data: latestJob } = await supabase
+          .from('photo_refresh_jobs')
+          .select('*')
+          .in('status', ['paused', 'running', 'failed'])
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        if (latestJob) {
+          job = latestJob;
+          console.log(`Resuming existing job ${job.id} with ${job.processed_restaurants} already processed`);
         }
       }
 
-      if (!job) {
-        // Create new job
+      if (job) {
+        // Resume existing job
+        await supabase
+          .from('photo_refresh_jobs')
+          .update({ status: 'running' })
+          .eq('id', job.id);
+        job = { ...job, status: 'running' };
+        console.log(`Resuming job ${job.id}, already processed: ${job.processed_restaurants}/${job.total_restaurants}`);
+      } else if (action === 'start') {
+        // Only create new job when explicitly starting
         const { data: newJob, error: createError } = await supabase
           .from('photo_refresh_jobs')
           .insert({
@@ -186,6 +206,13 @@ serve(async (req) => {
 
         if (createError) throw createError;
         job = newJob;
+        console.log(`Created new job ${job.id}`);
+      } else {
+        // Resume was called but no job exists
+        return new Response(
+          JSON.stringify({ error: 'No job to resume', message: 'Start a new job first' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
 
       // Start processing in background
