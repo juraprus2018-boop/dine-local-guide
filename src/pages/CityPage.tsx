@@ -88,10 +88,10 @@ export default function CityPage() {
   const placeJsonLd = {
     "@context": "https://schema.org",
     "@type": "Place",
-    "@id": `https://www.happio.nl/${city.slug}#place`,
+    "@id": `https://www.eatspot.nl/${city.slug}#place`,
     "name": city.name,
     "description": city.meta_description || `Ontdek de beste restaurants in ${city.name}`,
-    "url": `https://www.happio.nl/${city.slug}`,
+    "url": `https://www.eatspot.nl/${city.slug}`,
     "image": city.image_url || undefined,
     "address": {
       "@type": "PostalAddress",
@@ -114,7 +114,7 @@ export default function CityPage() {
     "@type": "ItemList",
     "name": `Restaurants in ${city.name}`,
     "description": city.meta_description || `Ontdek de beste restaurants in ${city.name}`,
-    "url": `https://www.happio.nl/${city.slug}`,
+    "url": `https://www.eatspot.nl/${city.slug}`,
     "numberOfItems": restaurants.length,
     "itemListElement": restaurants.slice(0, 10).map((r, i) => ({
       "@type": "ListItem",
@@ -122,7 +122,7 @@ export default function CityPage() {
       "item": {
         "@type": "Restaurant",
         "name": r.name,
-        "url": `https://www.happio.nl/${city.slug}/${r.slug}`,
+        "url": `https://www.eatspot.nl/${city.slug}/${r.slug}`,
         "image": r.image_url || undefined,
         "address": {
           "@type": "PostalAddress",
@@ -152,19 +152,19 @@ export default function CityPage() {
         "@type": "ListItem",
         "position": 1,
         "name": "Home",
-        "item": "https://www.happio.nl/"
+        "item": "https://www.eatspot.nl/"
       },
       {
         "@type": "ListItem",
         "position": 2,
         "name": "Steden",
-        "item": "https://www.happio.nl/ontdek"
+        "item": "https://www.eatspot.nl/ontdek"
       },
       {
         "@type": "ListItem",
         "position": 3,
         "name": city.name,
-        "item": `https://www.happio.nl/${city.slug}`
+        "item": `https://www.eatspot.nl/${city.slug}`
       }
     ]
   };

@@ -142,7 +142,7 @@ export default function RestaurantPage() {
     try {
       await navigator.share({
         title: restaurant.name,
-        text: `Bekijk ${restaurant.name} op Happio`,
+        text: `Bekijk ${restaurant.name} op Eatspot`,
         url: window.location.href,
       });
     } catch {
@@ -257,10 +257,10 @@ export default function RestaurantPage() {
   const restaurantJsonLd = {
     "@context": "https://schema.org",
     "@type": ["Restaurant", "LocalBusiness", "FoodEstablishment"],
-    "@id": `https://www.happio.nl/${citySlug}/${restaurantSlug}#restaurant`,
+    "@id": `https://www.eatspot.nl/${citySlug}/${restaurantSlug}#restaurant`,
     "name": restaurant.name,
     "description": restaurant.description || `${restaurant.name} in ${restaurant.city?.name}`,
-    "url": `https://www.happio.nl/${citySlug}/${restaurantSlug}`,
+    "url": `https://www.eatspot.nl/${citySlug}/${restaurantSlug}`,
     "image": photos.map(p => p.url),
     "logo": photos[0]?.url || restaurant.image_url,
     "address": {
@@ -306,7 +306,7 @@ export default function RestaurantPage() {
         },
         "author": {
           "@type": "Person",
-          "name": review.guest_name || "Happio gebruiker"
+          "name": review.guest_name || "Eatspot gebruiker"
         },
         "datePublished": review.created_at?.split('T')[0],
         "reviewBody": review.content || review.title || undefined
@@ -331,19 +331,19 @@ export default function RestaurantPage() {
         "@type": "ListItem",
         "position": 1,
         "name": "Home",
-        "item": "https://happio.nl/"
+        "item": "https://eatspot.nl/"
       },
       {
         "@type": "ListItem",
         "position": 2,
         "name": restaurant.city?.name,
-        "item": `https://happio.nl/${citySlug}`
+        "item": `https://eatspot.nl/${citySlug}`
       },
       {
         "@type": "ListItem",
         "position": 3,
         "name": restaurant.name,
-        "item": `https://happio.nl/${citySlug}/${restaurantSlug}`
+        "item": `https://eatspot.nl/${citySlug}/${restaurantSlug}`
       }
     ]
   };

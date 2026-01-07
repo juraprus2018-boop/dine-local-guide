@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import happioLogo from '@/assets/happio-logo.png';
+import eatspotLogo from '@/assets/eatspot-logo.png';
 import ReCaptcha, { ReCaptchaRef } from '@/components/ReCaptcha';
 import { verifyRecaptcha } from '@/hooks/useRecaptcha';
 
@@ -176,7 +176,7 @@ export default function AuthPage() {
                     </li>
                     <li className="flex gap-2">
                       <span className="font-bold text-primary">2.</span>
-                      Zoek naar een email van Happio
+                      Zoek naar een email van Eatspot
                     </li>
                     <li className="flex gap-2">
                       <span className="font-bold text-primary">3.</span>
@@ -238,7 +238,7 @@ export default function AuthPage() {
           <Card className="shadow-xl">
             <CardHeader className="text-center">
               <Link to="/" className="inline-block mb-4">
-                <img src={happioLogo} alt="Happio" className="h-12 mx-auto" />
+                <img src={eatspotLogo} alt="Eatspot" className="h-12 mx-auto" />
               </Link>
               <CardTitle>
                 {activeTab === 'login' ? 'Welkom terug' : 'Account aanmaken'}

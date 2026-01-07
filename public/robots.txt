@@ -5,4 +5,4 @@ Disallow: /auth
 Disallow: /profiel
 Disallow: /favorieten
 
-Sitemap: https://www.happio.nl/sitemap.xml
+Sitemap: https://www.eatspot.nl/sitemap.xml

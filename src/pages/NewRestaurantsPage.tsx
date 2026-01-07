@@ -30,7 +30,7 @@ export default function NewRestaurantsPage() {
   return (
     <Layout
       title="Nieuw toegevoegd"
-      description="Ontdek de nieuwste restaurants op Happio. Wees een van de eersten om een review te plaatsen."
+      description="Ontdek de nieuwste restaurants op Eatspot. Wees een van de eersten om een review te plaatsen."
     >
       <div className="container-wide py-12">
         <div className="text-center mb-12">
@@ -40,7 +40,7 @@ export default function NewRestaurantsPage() {
           </div>
           <h1 className="font-display text-4xl font-bold">Nieuw toegevoegd</h1>
           <p className="mt-4 text-lg text-muted-foreground">
-            De nieuwste restaurants op Happio
+            De nieuwste restaurants op Eatspot
           </p>
         </div>
 

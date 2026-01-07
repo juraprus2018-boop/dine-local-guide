@@ -29,7 +29,7 @@ export default function DiscoverPage() {
       "item": {
         "@type": "City",
         "name": city.name,
-        "url": `https://happio.nl/${city.slug}`
+        "url": `https://eatspot.nl/${city.slug}`
       }
     })) || []
   };

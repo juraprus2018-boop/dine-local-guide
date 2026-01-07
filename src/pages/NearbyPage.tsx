@@ -74,7 +74,7 @@ const NearbyPage = () => {
   return (
     <Layout>
       <Helmet>
-        <title>Restaurants in de Buurt | Happio</title>
+        <title>Restaurants in de Buurt | Eatspot</title>
         <meta name="description" content="Ontdek restaurants in jouw buurt. Vind de beste eetgelegenheden dichtbij op basis van je huidige locatie." />
       </Helmet>
 

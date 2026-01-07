@@ -10,7 +10,7 @@ const supabaseKey =
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const BASE_URL = "https://www.happio.nl";
+const BASE_URL = "https://www.eatspot.nl";
 const SITEMAPS_DIR = "dist/sitemaps";
 
 function isoDate(dateLike?: string | null) {

@@ -35,9 +35,9 @@ export default function Index() {
   const homepageJsonLd = {
     "@context": "https://schema.org",
     "@type": "WebPage",
-    "name": "Happio - Ontdek de beste restaurants in Nederland",
+    "name": "Eatspot - Ontdek de beste restaurants in Nederland",
     "description": "Vind en ontdek de beste restaurants, cafés en eetgelegenheden in jouw stad.",
-    "url": "https://www.happio.nl/",
+    "url": "https://www.eatspot.nl/",
     "mainEntity": {
       "@type": "ItemList",
       "name": "Populaire restaurants",
@@ -61,7 +61,7 @@ export default function Index() {
   return (
     <Layout
       title="Ontdek de beste restaurants in Nederland"
-      description="Vind en ontdek de beste restaurants, cafés en eetgelegenheden in jouw stad. Lees reviews, bekijk foto's en vind jouw perfecte eetplek met Happio."
+      description="Vind en ontdek de beste restaurants, cafés en eetgelegenheden in jouw stad. Lees reviews, bekijk foto's en vind jouw perfecte eetplek met Eatspot."
       jsonLd={homepageJsonLd}
     >
       <HeroSection 

@@ -103,8 +103,8 @@ export default function AdminReviewsPage() {
 
       if (review.guest_email) {
         const restaurantUrl = review.restaurant?.city?.slug && review.restaurant?.slug
-          ? `https://happio.nl/${review.restaurant.city.slug}/${review.restaurant.slug}`
-          : 'https://happio.nl';
+          ? `https://eatspot.nl/${review.restaurant.city.slug}/${review.restaurant.slug}`
+          : 'https://eatspot.nl';
 
         await supabase.functions.invoke('send-email', {
           body: {

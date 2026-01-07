@@ -15,7 +15,7 @@ const footerLinks = {
     { label: 'Eigenaar dashboard', href: '/eigenaar' },
   ],
   over: [
-    { label: 'Over Happio', href: '/over' },
+    { label: 'Over Eatspot', href: '/over' },
     { label: 'Contact', href: '/contact' },
     { label: 'Veelgestelde vragen', href: '/faq' },
     { label: 'Blog', href: '/blog' },
@@ -31,7 +31,7 @@ const socialLinks = [
   { icon: Facebook, href: 'https://facebook.com', label: 'Facebook' },
   { icon: Instagram, href: 'https://instagram.com', label: 'Instagram' },
   { icon: Twitter, href: 'https://twitter.com', label: 'Twitter' },
-  { icon: Mail, href: 'mailto:info@happio.nl', label: 'Email' },
+  { icon: Mail, href: 'mailto:info@eatspot.nl', label: 'Email' },
 ];
 
 export function Footer() {
@@ -43,9 +43,9 @@ export function Footer() {
           <div className="lg:col-span-1">
             <Link to="/" className="flex items-center gap-2">
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-display font-bold text-xl">
-                H
+                E
               </div>
-              <span className="font-display text-xl font-semibold">Happio</span>
+              <span className="font-display text-xl font-semibold">Eatspot</span>
             </Link>
             <p className="mt-4 text-sm text-muted-foreground">
               Ontdek de beste restaurants in Nederland. Van gezellige eetcafés tot sterrenrestaurants.
@@ -136,7 +136,7 @@ export function Footer() {
 
         <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Happio. Alle rechten voorbehouden.
+            © {new Date().getFullYear()} Eatspot. Alle rechten voorbehouden.
           </p>
           <p className="text-sm text-muted-foreground">
             Met ❤️ gemaakt in Nederland

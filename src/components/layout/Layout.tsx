@@ -26,10 +26,10 @@ export function Layout({
   noIndex = false,
 }: LayoutProps) {
   const location = useLocation();
-  const baseUrl = 'https://www.happio.nl';
+  const baseUrl = 'https://www.eatspot.nl';
   const canonicalUrl = `${baseUrl}${location.pathname}`;
   
-  const pageTitle = title ? `${title} | Happio` : 'Happio - Ontdek de beste restaurants in Nederland';
+  const pageTitle = title ? `${title} | Eatspot` : 'Eatspot - Ontdek de beste restaurants in Nederland';
   const pageDescription = description || 'Vind en ontdek de beste restaurants, cafés en eetgelegenheden in jouw stad. Lees reviews, bekijk foto\'s en vind jouw perfecte eetplek.';
   const pageImage = image || `${baseUrl}/og-image.png`;
 
@@ -37,10 +37,10 @@ export function Layout({
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    "name": "Happio",
+    "name": "Eatspot",
     "url": baseUrl,
-    "logo": `${baseUrl}/happio-logo.png`,
-    "description": "Happio is het platform voor het ontdekken van de beste restaurants in Nederland.",
+    "logo": `${baseUrl}/eatspot-logo.png`,
+    "description": "Eatspot is het platform voor het ontdekken van de beste restaurants in Nederland.",
     "sameAs": []
   };
 
@@ -48,7 +48,7 @@ export function Layout({
   const websiteSchema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    "name": "Happio",
+    "name": "Eatspot",
     "url": baseUrl,
     "potentialAction": {
       "@type": "SearchAction",
@@ -63,7 +63,7 @@ export function Layout({
         {/* Primary Meta Tags */}
         <title>{pageTitle}</title>
         <meta name="description" content={pageDescription} />
-        <meta name="author" content="Happio" />
+        <meta name="author" content="Eatspot" />
         <link rel="canonical" href={canonicalUrl} />
         
         {/* Robots */}
@@ -79,7 +79,7 @@ export function Layout({
         <meta property="og:title" content={pageTitle} />
         <meta property="og:description" content={pageDescription} />
         <meta property="og:image" content={pageImage} />
-        <meta property="og:site_name" content="Happio" />
+        <meta property="og:site_name" content="Eatspot" />
         <meta property="og:locale" content="nl_NL" />
         
         {/* Twitter */}

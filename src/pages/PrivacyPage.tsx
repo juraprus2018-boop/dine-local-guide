@@ -17,7 +17,7 @@ export default function PrivacyPage() {
 
             <h2 className="font-display text-2xl font-semibold mt-8 mb-4">1. Inleiding</h2>
             <p className="text-muted-foreground">
-              Happio respecteert je privacy en zet zich in voor de bescherming van je persoonlijke gegevens. Dit privacybeleid legt uit hoe wij je gegevens verzamelen, gebruiken en beschermen.
+              Eatspot respecteert je privacy en zet zich in voor de bescherming van je persoonlijke gegevens. Dit privacybeleid legt uit hoe wij je gegevens verzamelen, gebruiken en beschermen.
             </p>
 
             <h2 className="font-display text-2xl font-semibold mt-8 mb-4">2. Gegevens die we verzamelen</h2>
@@ -60,7 +60,7 @@ export default function PrivacyPage() {
 
             <h2 className="font-display text-2xl font-semibold mt-8 mb-4">6. Contact</h2>
             <p className="text-muted-foreground">
-              Heb je vragen over dit privacybeleid? Neem contact met ons op via info@happio.nl.
+              Heb je vragen over dit privacybeleid? Neem contact met ons op via info@eatspot.nl.
             </p>
           </div>
         </div>

@@ -55,7 +55,7 @@ export default function ContactPage() {
   return (
     <Layout
       title="Contact"
-      description="Neem contact op met Happio. Wij staan klaar om je te helpen met al je vragen."
+      description="Neem contact op met Eatspot. Wij staan klaar om je te helpen met al je vragen."
     >
       <div className="container-wide py-12">
         <div className="text-center mb-12">
@@ -74,8 +74,8 @@ export default function ContactPage() {
                   <Mail className="h-6 w-6 text-primary mt-1" />
                   <div>
                     <h3 className="font-semibold">Email</h3>
-                    <a href="mailto:info@happio.nl" className="text-muted-foreground hover:text-primary">
-                      info@happio.nl
+                    <a href="mailto:info@eatspot.nl" className="text-muted-foreground hover:text-primary">
+                      info@eatspot.nl
                     </a>
                   </div>
                 </div>

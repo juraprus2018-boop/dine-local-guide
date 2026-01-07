@@ -21,7 +21,7 @@ export function CTASection() {
           </h2>
           
           <p className="mt-6 text-lg text-primary-foreground/80 max-w-xl mx-auto">
-            Voeg je restaurant toe aan Happio en bereik duizenden potentiële gasten. 
+            Voeg je restaurant toe aan Eatspot en bereik duizenden potentiële gasten. 
             Gratis en binnen 5 minuten geregeld.
           </p>
 

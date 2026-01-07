@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
-import happioLogo from '@/assets/happio-logo.png';
+import eatspotLogo from '@/assets/eatspot-logo.png';
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -48,7 +48,7 @@ export function Header() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center">
-            <img src={happioLogo} alt="Happio" className="h-10" />
+            <img src={eatspotLogo} alt="Eatspot" className="h-10" />
           </Link>
 
           {/* Desktop Navigation */}
