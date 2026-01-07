@@ -2,7 +2,7 @@ import { useLocation, Link } from "react-router-dom";
 import { useEffect } from "react";
 import { Home, Search, MapPin, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import happioLogo from "@/assets/happio-logo.png";
+import eatspotLogo from "@/assets/eatspot-logo.png";
 
 const NotFound = () => {
   const location = useLocation();
@@ -16,7 +16,7 @@ const NotFound = () => {
       {/* Header */}
       <header className="p-6">
         <Link to="/" className="inline-block">
-          <img src={happioLogo} alt="Happio" className="h-10" />
+          <img src={eatspotLogo} alt="Eatspot" className="h-10" />
         </Link>
       </header>
 
@@ -73,7 +73,7 @@ const NotFound = () => {
 
       {/* Footer */}
       <footer className="p-6 text-center text-sm text-muted-foreground">
-        <p>© {new Date().getFullYear()} Happio. Alle rechten voorbehouden.</p>
+        <p>© {new Date().getFullYear()} Eatspot. Alle rechten voorbehouden.</p>
       </footer>
     </div>
   );
