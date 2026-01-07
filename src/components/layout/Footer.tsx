@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Facebook, Instagram, Twitter, Mail } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import eatspotLogo from '@/assets/eatspot-logo.png';
 
 const footerLinks = {
   ontdek: [
@@ -41,11 +42,8 @@ export function Footer() {
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-5">
           {/* Brand */}
           <div className="lg:col-span-1">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-display font-bold text-xl">
-                E
-              </div>
-              <span className="font-display text-xl font-semibold">Eatspot</span>
+            <Link to="/">
+              <img src={eatspotLogo} alt="Eatspot" className="h-10" />
             </Link>
             <p className="mt-4 text-sm text-muted-foreground">
               Ontdek de beste restaurants in Nederland. Van gezellige eetcafés tot sterrenrestaurants.
