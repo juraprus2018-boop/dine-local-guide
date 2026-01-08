@@ -7,7 +7,7 @@ import {
   useState,
 } from "react";
 
-const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LesGMErAAAAANSzhGM295fLOdG36pGy9dEoR5Mg";
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
 export interface ReCaptchaRef {
   getToken: () => string | null;
