@@ -1,6 +1,6 @@
 import { useParams, useSearchParams, Link, Navigate } from 'react-router-dom';
-import { useState } from 'react';
-import { MapPin, Filter, Grid, List, SlidersHorizontal } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { MapPin, Filter, Grid, List, SlidersHorizontal, Utensils, Star, TrendingUp } from 'lucide-react';
 import NotFound from './NotFound';
 import { Layout } from '@/components/layout';
 import { RestaurantCard } from '@/components/restaurants/RestaurantCard';
@@ -29,6 +29,38 @@ import type { PriceRange } from '@/types/database';
 
 const priceRangeOptions: PriceRange[] = ['€', '€€', '€€€', '€€€€'];
 
+// Dynamic SEO content generator
+function generateCityContent(cityName: string, province: string, restaurantCount: number, topCuisines: string[]) {
+  const currentMonth = new Date().toLocaleDateString('nl-NL', { month: 'long' });
+  const currentYear = new Date().getFullYear();
+  
+  const introVariants = [
+    `${cityName} is een culinaire hotspot in ${province} met maar liefst ${restaurantCount} restaurants om uit te kiezen.`,
+    `Ontdek de beste eetgelegenheden van ${cityName}. Van gezellige bistro's tot fine dining - ${province} heeft het allemaal.`,
+    `Op zoek naar een goed restaurant in ${cityName}? Wij hebben ${restaurantCount} opties voor je verzameld.`,
+  ];
+  
+  const cuisineText = topCuisines.length > 0 
+    ? `Populaire keukens in ${cityName} zijn onder andere ${topCuisines.slice(0, 3).join(', ')}.`
+    : `${cityName} biedt een diverse mix van culinaire stijlen.`;
+  
+  const ctaVariants = [
+    `Bekijk reviews, foto's en menu's om jouw perfecte restaurant te vinden.`,
+    `Lees beoordelingen van andere bezoekers en ontdek verborgen parels.`,
+    `Filter op prijsklasse, keuken of beoordeling voor de beste match.`,
+  ];
+  
+  // Use city name to deterministically pick variants (consistent per city)
+  const hash = cityName.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  
+  return {
+    intro: introVariants[hash % introVariants.length],
+    cuisines: cuisineText,
+    cta: ctaVariants[(hash + 1) % ctaVariants.length],
+    updated: `Laatst bijgewerkt: ${currentMonth} ${currentYear}`,
+  };
+}
+
 export default function CityPage() {
   const { citySlug } = useParams<{ citySlug: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -54,6 +86,49 @@ export default function CityPage() {
   useTrackPageView({ pageType: 'city', pageSlug: citySlug });
 
   const restaurants = restaurantsData?.restaurants || [];
+
+  // Calculate statistics for dynamic content
+  const stats = useMemo(() => {
+    if (!restaurants.length) return null;
+    
+    const withReviews = restaurants.filter((r: any) => r.review_count > 0);
+    const avgRating = withReviews.length > 0 
+      ? (withReviews.reduce((acc: number, r: any) => acc + Number(r.rating || 0), 0) / withReviews.length).toFixed(1)
+      : null;
+    
+    // Get top cuisines from restaurants
+    const cuisineCounts: Record<string, number> = {};
+    restaurants.forEach((r: any) => {
+      r.cuisines?.forEach((c: any) => {
+        if (c?.name) {
+          cuisineCounts[c.name] = (cuisineCounts[c.name] || 0) + 1;
+        }
+      });
+    });
+    
+    const topCuisines = Object.entries(cuisineCounts)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 5)
+      .map(([name]) => name);
+    
+    return {
+      totalRestaurants: restaurants.length,
+      reviewedRestaurants: withReviews.length,
+      avgRating,
+      topCuisines,
+    };
+  }, [restaurants]);
+
+  // Generate dynamic SEO content
+  const dynamicContent = useMemo(() => {
+    if (!city) return null;
+    return generateCityContent(
+      city.name, 
+      city.province || '', 
+      restaurants.length,
+      stats?.topCuisines || []
+    );
+  }, [city, restaurants.length, stats?.topCuisines]);
 
   const togglePrice = (price: PriceRange) => {
     setSelectedPrices(prev =>
@@ -169,12 +244,46 @@ export default function CityPage() {
     ]
   };
 
+  // FAQ JSON-LD for SEO
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": `Hoeveel restaurants zijn er in ${city.name}?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `Er zijn momenteel ${restaurants.length} restaurants geregistreerd in ${city.name}. Dit aantal wordt regelmatig bijgewerkt met nieuwe eetgelegenheden.`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `Wat is de beste keuken in ${city.name}?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": stats?.topCuisines && stats.topCuisines.length > 0 
+            ? `De meest populaire keukens in ${city.name} zijn ${stats.topCuisines.slice(0, 3).join(', ')}.`
+            : `${city.name} biedt een diverse mix van culinaire stijlen.`
+        }
+      },
+      {
+        "@type": "Question",
+        "name": `Hoe vind ik het beste restaurant in ${city.name}?`,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": `Sorteer op "Beste beoordeling" om de hoogst beoordeelde restaurants te zien. Je kunt ook filteren op prijsklasse en keukentype.`
+        }
+      }
+    ]
+  };
+
   return (
     <Layout
       title={`Restaurants in ${city.name} - ${city.province}`}
       description={city.meta_description || `Ontdek de ${restaurants.length} beste restaurants in ${city.name}, ${city.province}. Lees reviews, bekijk foto's en vind jouw perfecte eetplek.`}
       image={city.image_url || undefined}
-      jsonLd={[placeJsonLd, itemListJsonLd, breadcrumbJsonLd]}
+      jsonLd={[placeJsonLd, itemListJsonLd, breadcrumbJsonLd, faqJsonLd]}
     >
       {/* Hero */}
       <section className="bg-gradient-to-b from-secondary/50 to-background py-8 md:py-12">
@@ -381,6 +490,123 @@ export default function CityPage() {
           <div className="mt-8">
             <AdBlock placementType="city" />
           </div>
+
+          {/* Dynamic SEO Content Section */}
+          {dynamicContent && restaurants.length > 0 && (
+            <section className="mt-12 pt-8 border-t">
+              <div className="max-w-4xl">
+                <h2 className="text-2xl font-display font-bold mb-6">
+                  Uit eten in {city.name}
+                </h2>
+                
+                <div className="prose prose-sm max-w-none text-muted-foreground space-y-4">
+                  <p className="text-base leading-relaxed">
+                    {dynamicContent.intro} {dynamicContent.cuisines}
+                  </p>
+                  
+                  <p className="text-base leading-relaxed">
+                    {dynamicContent.cta}
+                  </p>
+                </div>
+
+                {/* Stats Cards */}
+                {stats && (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+                    <div className="bg-secondary/30 rounded-lg p-4 text-center">
+                      <Utensils className="h-5 w-5 mx-auto mb-2 text-primary" />
+                      <div className="text-2xl font-bold">{stats.totalRestaurants}</div>
+                      <div className="text-xs text-muted-foreground">Restaurants</div>
+                    </div>
+                    
+                    <div className="bg-secondary/30 rounded-lg p-4 text-center">
+                      <Star className="h-5 w-5 mx-auto mb-2 text-primary" />
+                      <div className="text-2xl font-bold">{stats.reviewedRestaurants}</div>
+                      <div className="text-xs text-muted-foreground">Met reviews</div>
+                    </div>
+                    
+                    {stats.avgRating && (
+                      <div className="bg-secondary/30 rounded-lg p-4 text-center">
+                        <TrendingUp className="h-5 w-5 mx-auto mb-2 text-primary" />
+                        <div className="text-2xl font-bold">{stats.avgRating}</div>
+                        <div className="text-xs text-muted-foreground">Gem. score</div>
+                      </div>
+                    )}
+                    
+                    {stats.topCuisines.length > 0 && (
+                      <div className="bg-secondary/30 rounded-lg p-4 text-center">
+                        <div className="text-lg mb-1">🍽️</div>
+                        <div className="text-sm font-medium truncate">{stats.topCuisines[0]}</div>
+                        <div className="text-xs text-muted-foreground">Populairste keuken</div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Popular Cuisines */}
+                {stats?.topCuisines && stats.topCuisines.length > 1 && (
+                  <div className="mt-8">
+                    <h3 className="text-lg font-semibold mb-3">
+                      Populaire keukens in {city.name}
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {stats.topCuisines.map((cuisine) => (
+                        <Badge key={cuisine} variant="secondary" className="px-3 py-1">
+                          {cuisine}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* FAQ Section for SEO */}
+                <div className="mt-10">
+                  <h3 className="text-lg font-semibold mb-4">
+                    Veelgestelde vragen over restaurants in {city.name}
+                  </h3>
+                  <div className="space-y-4">
+                    <details className="group bg-secondary/20 rounded-lg">
+                      <summary className="flex cursor-pointer items-center justify-between p-4 font-medium">
+                        Hoeveel restaurants zijn er in {city.name}?
+                        <span className="transition group-open:rotate-180">▼</span>
+                      </summary>
+                      <div className="px-4 pb-4 text-muted-foreground">
+                        Er zijn momenteel {restaurants.length} restaurants geregistreerd in {city.name}. 
+                        Dit aantal wordt regelmatig bijgewerkt met nieuwe eetgelegenheden.
+                      </div>
+                    </details>
+                    
+                    <details className="group bg-secondary/20 rounded-lg">
+                      <summary className="flex cursor-pointer items-center justify-between p-4 font-medium">
+                        Wat is de beste keuken in {city.name}?
+                        <span className="transition group-open:rotate-180">▼</span>
+                      </summary>
+                      <div className="px-4 pb-4 text-muted-foreground">
+                        {stats?.topCuisines && stats.topCuisines.length > 0 
+                          ? `De meest populaire keukens in ${city.name} zijn ${stats.topCuisines.slice(0, 3).join(', ')}. Gebruik de filters om restaurants per keuken te bekijken.`
+                          : `${city.name} biedt een diverse mix van culinaire stijlen. Gebruik de filters om te zoeken op jouw favoriete keuken.`
+                        }
+                      </div>
+                    </details>
+                    
+                    <details className="group bg-secondary/20 rounded-lg">
+                      <summary className="flex cursor-pointer items-center justify-between p-4 font-medium">
+                        Hoe vind ik het beste restaurant in {city.name}?
+                        <span className="transition group-open:rotate-180">▼</span>
+                      </summary>
+                      <div className="px-4 pb-4 text-muted-foreground">
+                        Sorteer op "Beste beoordeling" om de hoogst beoordeelde restaurants te zien. 
+                        Je kunt ook filteren op prijsklasse en keukentype om een restaurant te vinden dat bij jouw voorkeuren past.
+                      </div>
+                    </details>
+                  </div>
+                </div>
+
+                <p className="text-xs text-muted-foreground mt-8">
+                  {dynamicContent.updated}
+                </p>
+              </div>
+            </section>
+          )}
         </div>
       </section>
     </Layout>
