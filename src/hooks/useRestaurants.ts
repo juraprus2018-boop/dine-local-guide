@@ -44,10 +44,22 @@ export function useRestaurants(filters: RestaurantFilters = {}) {
         query = query.ilike('name', `%${filters.search}%`);
       }
 
-      // Sorting
+      // Sorting - always put restaurants with reviews first
       const sortBy = filters.sortBy || 'rating';
       const sortOrder = filters.sortOrder || 'desc';
-      query = query.order(sortBy === 'reviews' ? 'review_count' : sortBy, { ascending: sortOrder === 'asc' });
+      
+      // First sort by whether restaurant has reviews (review_count > 0 first)
+      query = query.order('review_count', { ascending: false, nullsFirst: false });
+      
+      // Then apply the selected sort
+      if (sortBy === 'reviews') {
+        // Already sorted by review_count above, just ensure correct order
+        query = query.order('review_count', { ascending: sortOrder === 'asc', nullsFirst: false });
+      } else if (sortBy === 'rating') {
+        query = query.order('rating', { ascending: sortOrder === 'asc', nullsFirst: false });
+      } else {
+        query = query.order(sortBy, { ascending: sortOrder === 'asc' });
+      }
 
       // Pagination
       const page = filters.page || 1;
