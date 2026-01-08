@@ -310,6 +310,13 @@ export default function CityPage() {
             </div>
           </div>
 
+          {/* Dynamic intro text below H1 */}
+          {dynamicContent && (
+            <p className="mt-4 text-muted-foreground max-w-3xl">
+              {dynamicContent.intro} {dynamicContent.cuisines} {dynamicContent.cta}
+            </p>
+          )}
+
           <div className="mt-6">
             <SearchBar className="max-w-2xl" />
           </div>
@@ -498,16 +505,6 @@ export default function CityPage() {
                 <h2 className="text-2xl font-display font-bold mb-6">
                   Uit eten in {city.name}
                 </h2>
-                
-                <div className="prose prose-sm max-w-none text-muted-foreground space-y-4">
-                  <p className="text-base leading-relaxed">
-                    {dynamicContent.intro} {dynamicContent.cuisines}
-                  </p>
-                  
-                  <p className="text-base leading-relaxed">
-                    {dynamicContent.cta}
-                  </p>
-                </div>
 
                 {/* Stats Cards */}
                 {stats && (
