@@ -8,8 +8,8 @@ import {
 
 const faqs = [
   {
-    question: 'Wat is Eatspot?',
-    answer: 'Eatspot is een platform waar je de beste restaurants in Nederland kunt ontdekken. Je kunt reviews lezen, foto\'s bekijken en alle informatie vinden die je nodig hebt om de perfecte eetplek te kiezen.'
+    question: 'Wat is Mijn Restaurant?',
+    answer: 'Mijn Restaurant is een platform waar je de beste restaurants in Nederland kunt ontdekken. Je kunt reviews lezen, foto\'s bekijken en alle informatie vinden die je nodig hebt om de perfecte eetplek te kiezen.'
   },
   {
     question: 'Hoe kan ik een review plaatsen?',
@@ -21,15 +21,15 @@ const faqs = [
   },
   {
     question: 'Hoe claim ik een bestaand restaurant?',
-    answer: 'Als je restaurant al op Eatspot staat, kun je het claimen door op de "Claim dit restaurant" knop te klikken op de restaurantpagina. Je moet bewijzen dat je de eigenaar bent.'
+    answer: 'Als je restaurant al op Mijn Restaurant staat, kun je het claimen door op de "Claim dit restaurant" knop te klikken op de restaurantpagina. Je moet bewijzen dat je de eigenaar bent.'
   },
   {
-    question: 'Zijn de reviews op Happio betrouwbaar?',
+    question: 'Zijn de reviews op Mijn Restaurant betrouwbaar?',
     answer: 'Alle reviews worden eerst gecontroleerd door onze moderators voordat ze worden gepubliceerd. We doen ons best om fake reviews te voorkomen en eerlijke feedback te garanderen.'
   },
   {
-    question: 'Kost het geld om mijn restaurant op Eatspot te zetten?',
-    answer: 'Nee, het is volledig gratis om je restaurant op Eatspot te vermelden. We bieden wel premium opties voor extra zichtbaarheid.'
+    question: 'Kost het geld om mijn restaurant op Mijn Restaurant te zetten?',
+    answer: 'Nee, het is volledig gratis om je restaurant op Mijn Restaurant te vermelden. We bieden wel premium opties voor extra zichtbaarheid.'
   },
   {
     question: 'Hoe kan ik mijn restaurantgegevens bijwerken?',
@@ -45,7 +45,7 @@ export default function FAQPage() {
   return (
     <Layout
       title="Veelgestelde vragen"
-      description="Vind antwoorden op veelgestelde vragen over Eatspot - het platform voor het ontdekken van restaurants."
+      description="Vind antwoorden op veelgestelde vragen over Mijn Restaurant - het platform voor het ontdekken van restaurants."
     >
       <div className="container-wide py-12">
         <div className="text-center mb-12">

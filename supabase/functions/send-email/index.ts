@@ -16,11 +16,11 @@ interface EmailRequest {
 async function sendEmail(request: EmailRequest): Promise<void> {
   const client = new SMTPClient({
     connection: {
-      hostname: "happio.nl",
+      hostname: "mijn-restaurant.nl",
       port: 465,
       tls: true,
       auth: {
-        username: "info@happio.nl",
+        username: "info@mijn-restaurant.nl",
         password: Deno.env.get("SMTP_PASSWORD") || "",
       },
     },
@@ -30,7 +30,7 @@ async function sendEmail(request: EmailRequest): Promise<void> {
 
   try {
     await client.send({
-      from: "Happio <info@happio.nl>",
+      from: "Mijn Restaurant <info@mijn-restaurant.nl>",
       to: toAddresses,
       subject: request.subject,
       content: request.text || "",
@@ -58,7 +58,7 @@ serve(async (req) => {
         
         await sendEmail({
           to: email,
-          subject: "Bevestig je Happio account",
+          subject: "Bevestig je Mijn Restaurant account",
           html: `
             <!DOCTYPE html>
             <html>
@@ -84,11 +84,11 @@ serve(async (req) => {
               <div class="container">
                 <div class="card">
                   <div class="header">
-                    <h1>😊 Happio</h1>
+                    <h1>🍽️ Mijn Restaurant</h1>
                   </div>
                   <div class="content">
                     <h2>Hallo ${displayName || 'daar'}! 👋</h2>
-                    <p>Bedankt voor je registratie bij Happio! Klik op de knop hieronder om je emailadres te bevestigen en je account te activeren.</p>
+                    <p>Bedankt voor je registratie bij Mijn Restaurant! Klik op de knop hieronder om je emailadres te bevestigen en je account te activeren.</p>
                     
                     <div style="text-align: center;">
                       <a href="${confirmationUrl}" class="button">✉️ Bevestig mijn email</a>
@@ -103,7 +103,7 @@ serve(async (req) => {
                     <p style="color: #666; font-size: 14px;">Deze link is 24 uur geldig. Als je geen account hebt aangemaakt, kun je deze email negeren.</p>
                   </div>
                   <div class="footer">
-                    <p>© ${new Date().getFullYear()} Happio. Alle rechten voorbehouden.</p>
+                    <p>© ${new Date().getFullYear()} Mijn Restaurant. Alle rechten voorbehouden.</p>
                     <p>Ontdek de beste restaurants in Nederland</p>
                   </div>
                 </div>
@@ -115,7 +115,7 @@ serve(async (req) => {
 
         // Notify admin about new registration
         await sendEmail({
-          to: "info@happio.nl",
+          to: "info@mijn-restaurant.nl",
           subject: `Nieuwe registratie: ${displayName || email}`,
           html: `
             <!DOCTYPE html>
@@ -137,7 +137,7 @@ serve(async (req) => {
                   <h1>📧 Nieuwe Registratie</h1>
                 </div>
                 <div class="content">
-                  <p>Er heeft zich een nieuwe gebruiker geregistreerd bij Happio:</p>
+                  <p>Er heeft zich een nieuwe gebruiker geregistreerd bij Mijn Restaurant:</p>
                   <div class="info-box">
                     <p><strong>Email:</strong> ${email}</p>
                     <p><strong>Naam:</strong> ${displayName || 'Niet opgegeven'}</p>
@@ -158,7 +158,7 @@ serve(async (req) => {
         
         await sendEmail({
           to: email,
-          subject: "Welkom bij Happio! 🎉",
+          subject: "Welkom bij Mijn Restaurant! 🎉",
           html: `
             <!DOCTYPE html>
             <html>
@@ -181,11 +181,11 @@ serve(async (req) => {
               <div class="container">
                 <div class="card">
                   <div class="header">
-                    <h1>Welkom bij Happio! 🎉</h1>
+                    <h1>Welkom bij Mijn Restaurant! 🎉</h1>
                   </div>
                   <div class="content">
                     <p style="font-size: 18px;">Hallo ${displayName || 'daar'}! 👋</p>
-                    <p>Je account is nu actief. Dit kun je doen met Happio:</p>
+                    <p>Je account is nu actief. Dit kun je doen met Mijn Restaurant:</p>
                     
                     <div class="feature">
                       <span class="feature-icon">🍽️</span>
@@ -212,11 +212,11 @@ serve(async (req) => {
                     </div>
                     
                     <div style="text-align: center;">
-                      <a href="https://happio.nl" class="button">Begin met ontdekken →</a>
+                      <a href="https://mijn-restaurant.nl" class="button">Begin met ontdekken →</a>
                     </div>
                   </div>
                   <div class="footer">
-                    <p>© ${new Date().getFullYear()} Happio. Alle rechten voorbehouden.</p>
+                    <p>© ${new Date().getFullYear()} Mijn Restaurant. Alle rechten voorbehouden.</p>
                   </div>
                 </div>
               </div>
@@ -267,7 +267,7 @@ serve(async (req) => {
                     <p>Je review helpt andere bezoekers bij het vinden van de beste restaurants!</p>
                   </div>
                   <div class="footer">
-                    <p>© ${new Date().getFullYear()} Happio. Alle rechten voorbehouden.</p>
+                    <p>© ${new Date().getFullYear()} Mijn Restaurant. Alle rechten voorbehouden.</p>
                   </div>
                 </div>
               </body>
@@ -278,7 +278,7 @@ serve(async (req) => {
 
         // Notify admin about new review
         await sendEmail({
-          to: "info@happio.nl",
+          to: "info@mijn-restaurant.nl",
           subject: `Nieuwe review: ${restaurantName} - ${rating}★`,
           html: `
             <!DOCTYPE html>
@@ -368,7 +368,7 @@ serve(async (req) => {
                     </div>
                   </div>
                   <div class="footer">
-                    <p>© ${new Date().getFullYear()} Happio. Alle rechten voorbehouden.</p>
+                    <p>© ${new Date().getFullYear()} Mijn Restaurant. Alle rechten voorbehouden.</p>
                   </div>
                 </div>
               </div>

@@ -5,14 +5,14 @@ import { Users, Target, Heart, Award } from 'lucide-react';
 export default function AboutPage() {
   return (
     <Layout
-      title="Over Eatspot"
-      description="Leer meer over Eatspot - het platform voor het ontdekken van de beste restaurants in Nederland."
+      title="Over Mijn Restaurant"
+      description="Leer meer over Mijn Restaurant - het platform voor het ontdekken van de beste restaurants in Nederland."
     >
       <div className="container-wide py-12">
         {/* Hero */}
         <div className="text-center mb-12">
           <h1 className="font-display text-4xl font-bold md:text-5xl">
-            Over Eatspot
+            Over Mijn Restaurant
           </h1>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
             Wij helpen je de beste restaurants in Nederland te ontdekken. Van gezellige eetcafés tot sterrenrestaurants.
@@ -69,10 +69,10 @@ export default function AboutPage() {
           </h2>
           <div className="prose prose-lg mx-auto text-muted-foreground">
             <p>
-              Eatspot is ontstaan uit een simpele frustratie: het vinden van een goed restaurant zou niet zo moeilijk moeten zijn. Wij geloven dat iedereen toegang verdient tot eerlijke, betrouwbare informatie over restaurants in hun buurt.
+              Mijn Restaurant is ontstaan uit een simpele frustratie: het vinden van een goed restaurant zou niet zo moeilijk moeten zijn. Wij geloven dat iedereen toegang verdient tot eerlijke, betrouwbare informatie over restaurants in hun buurt.
             </p>
             <p className="mt-4">
-              Of je nu op zoek bent naar een romantisch diner, een zakelijke lunch of gewoon een goede pizza, Eatspot helpt je de perfecte plek te vinden. Met duizenden restaurants, eerlijke reviews en handige filters vind je altijd wat je zoekt.
+              Of je nu op zoek bent naar een romantisch diner, een zakelijke lunch of gewoon een goede pizza, Mijn Restaurant helpt je de perfecte plek te vinden. Met duizenden restaurants, eerlijke reviews en handige filters vind je altijd wat je zoekt.
             </p>
             <p className="mt-4">
               Wij werken nauw samen met restauranteigenaren om ervoor te zorgen dat hun informatie altijd up-to-date is. Zo weet je zeker dat je de juiste keuze maakt.

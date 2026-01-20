@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Facebook, Instagram, Twitter, Mail } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
-import eatspotLogo from '@/assets/eatspot-logo.png';
+import mijnRestaurantLogo from '@/assets/mijn-restaurant-logo.png';
 
 const footerLinks = {
   ontdek: [
@@ -16,7 +16,7 @@ const footerLinks = {
     { label: 'Eigenaar dashboard', href: '/eigenaar' },
   ],
   over: [
-    { label: 'Over Eatspot', href: '/over' },
+    { label: 'Over Mijn Restaurant', href: '/over' },
     { label: 'Contact', href: '/contact' },
     { label: 'Veelgestelde vragen', href: '/faq' },
     { label: 'Blog', href: '/blog' },
@@ -32,7 +32,7 @@ const socialLinks = [
   { icon: Facebook, href: 'https://facebook.com', label: 'Facebook' },
   { icon: Instagram, href: 'https://instagram.com', label: 'Instagram' },
   { icon: Twitter, href: 'https://twitter.com', label: 'Twitter' },
-  { icon: Mail, href: 'mailto:info@eatspot.nl', label: 'Email' },
+  { icon: Mail, href: 'mailto:info@mijn-restaurant.nl', label: 'Email' },
 ];
 
 export function Footer() {
@@ -43,7 +43,7 @@ export function Footer() {
           {/* Brand */}
           <div className="lg:col-span-1">
             <Link to="/">
-              <img src={eatspotLogo} alt="Eatspot" className="h-28 md:h-32" />
+              <img src={mijnRestaurantLogo} alt="Mijn Restaurant" className="h-28 md:h-32" />
             </Link>
             <p className="mt-4 text-sm text-muted-foreground">
               Ontdek de beste restaurants in Nederland. Van gezellige eetcafés tot sterrenrestaurants.
@@ -134,7 +134,7 @@ export function Footer() {
 
         <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Eatspot. Alle rechten voorbehouden.
+            © {new Date().getFullYear()} Mijn Restaurant. Alle rechten voorbehouden.
           </p>
           <p className="text-sm text-muted-foreground">
             Met ❤️ gemaakt in Nederland
