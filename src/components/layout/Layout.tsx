@@ -26,10 +26,10 @@ export function Layout({
   noIndex = false,
 }: LayoutProps) {
   const location = useLocation();
-  const baseUrl = 'https://www.eatspot.nl';
+  const baseUrl = 'https://www.mijn-restaurant.nl';
   const canonicalUrl = `${baseUrl}${location.pathname}`;
   
-  const pageTitle = title ? `${title} | Eatspot` : 'Eatspot - Ontdek de beste restaurants in Nederland';
+  const pageTitle = title ? `${title} | Mijn Restaurant` : 'Mijn Restaurant - Ontdek de beste restaurants in Nederland';
   const pageDescription = description || 'Vind en ontdek de beste restaurants, cafés en eetgelegenheden in jouw stad. Lees reviews, bekijk foto\'s en vind jouw perfecte eetplek.';
   const pageImage = image || `${baseUrl}/og-image.png`;
 
@@ -37,10 +37,10 @@ export function Layout({
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    "name": "Eatspot",
+    "name": "Mijn Restaurant",
     "url": baseUrl,
-    "logo": `${baseUrl}/eatspot-logo.png`,
-    "description": "Eatspot is het platform voor het ontdekken van de beste restaurants in Nederland.",
+    "logo": `${baseUrl}/mijn-restaurant-logo.png`,
+    "description": "Mijn Restaurant is het platform voor het ontdekken van de beste restaurants in Nederland.",
     "sameAs": []
   };
 
@@ -48,7 +48,7 @@ export function Layout({
   const websiteSchema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    "name": "Eatspot",
+    "name": "Mijn Restaurant",
     "url": baseUrl,
     "potentialAction": {
       "@type": "SearchAction",
@@ -63,7 +63,7 @@ export function Layout({
         {/* Primary Meta Tags */}
         <title>{pageTitle}</title>
         <meta name="description" content={pageDescription} />
-        <meta name="author" content="Eatspot" />
+        <meta name="author" content="Mijn Restaurant" />
         <link rel="canonical" href={canonicalUrl} />
         
         {/* Robots */}
@@ -79,7 +79,7 @@ export function Layout({
         <meta property="og:title" content={pageTitle} />
         <meta property="og:description" content={pageDescription} />
         <meta property="og:image" content={pageImage} />
-        <meta property="og:site_name" content="Eatspot" />
+        <meta property="og:site_name" content="Mijn Restaurant" />
         <meta property="og:locale" content="nl_NL" />
         
         {/* Twitter */}

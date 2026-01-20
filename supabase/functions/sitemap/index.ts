@@ -6,7 +6,7 @@ const corsHeaders = {
   "Content-Type": "application/xml; charset=utf-8",
 };
 
-const BASE_URL = "https://eatspot.nl";
+const BASE_URL = "https://mijn-restaurant.nl";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {

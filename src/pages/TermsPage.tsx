@@ -4,7 +4,7 @@ export default function TermsPage() {
   return (
     <Layout
       title="Algemene voorwaarden"
-      description="Lees onze algemene voorwaarden voor het gebruik van Eatspot."
+      description="Lees onze algemene voorwaarden voor het gebruik van Mijn Restaurant."
     >
       <div className="container-wide py-12">
         <div className="max-w-3xl mx-auto">
@@ -17,17 +17,17 @@ export default function TermsPage() {
 
             <h2 className="font-display text-2xl font-semibold mt-8 mb-4">1. Algemeen</h2>
             <p className="text-muted-foreground">
-              Door gebruik te maken van Eatspot ga je akkoord met deze algemene voorwaarden. Lees ze zorgvuldig door voordat je onze diensten gebruikt.
+              Door gebruik te maken van Mijn Restaurant ga je akkoord met deze algemene voorwaarden. Lees ze zorgvuldig door voordat je onze diensten gebruikt.
             </p>
 
             <h2 className="font-display text-2xl font-semibold mt-8 mb-4">2. Dienstverlening</h2>
             <p className="text-muted-foreground">
-              Eatspot biedt een platform voor het ontdekken van restaurants en het delen van ervaringen. Wij doen ons best om accurate informatie te verstrekken, maar kunnen niet garanderen dat alle informatie volledig en up-to-date is.
+              Mijn Restaurant biedt een platform voor het ontdekken van restaurants en het delen van ervaringen. Wij doen ons best om accurate informatie te verstrekken, maar kunnen niet garanderen dat alle informatie volledig en up-to-date is.
             </p>
 
             <h2 className="font-display text-2xl font-semibold mt-8 mb-4">3. Gebruikersgedrag</h2>
             <p className="text-muted-foreground">
-              Als gebruiker van Eatspot stem je ermee in om:
+              Als gebruiker van Mijn Restaurant stem je ermee in om:
             </p>
             <ul className="list-disc pl-6 text-muted-foreground space-y-2 mt-4">
               <li>Alleen eerlijke en waarheidsgetrouwe reviews te plaatsen</li>
@@ -38,7 +38,7 @@ export default function TermsPage() {
 
             <h2 className="font-display text-2xl font-semibold mt-8 mb-4">4. Reviews en content</h2>
             <p className="text-muted-foreground">
-              Door content (reviews, foto's) te plaatsen op Eatspot, geef je ons het recht om deze content te gebruiken op onze website en in marketingmaterialen. Je blijft eigenaar van je content.
+              Door content (reviews, foto's) te plaatsen op Mijn Restaurant, geef je ons het recht om deze content te gebruiken op onze website en in marketingmaterialen. Je blijft eigenaar van je content.
             </p>
 
             <h2 className="font-display text-2xl font-semibold mt-8 mb-4">5. Moderatie</h2>
@@ -48,7 +48,7 @@ export default function TermsPage() {
 
             <h2 className="font-display text-2xl font-semibold mt-8 mb-4">6. Aansprakelijkheid</h2>
             <p className="text-muted-foreground">
-              Eatspot is niet aansprakelijk voor de inhoud van reviews of andere door gebruikers geplaatste content. Wij zijn ook niet aansprakelijk voor eventuele schade die voortvloeit uit het gebruik van onze diensten.
+              Mijn Restaurant is niet aansprakelijk voor de inhoud van reviews of andere door gebruikers geplaatste content. Wij zijn ook niet aansprakelijk voor eventuele schade die voortvloeit uit het gebruik van onze diensten.
             </p>
 
             <h2 className="font-display text-2xl font-semibold mt-8 mb-4">7. Wijzigingen</h2>
@@ -58,7 +58,7 @@ export default function TermsPage() {
 
             <h2 className="font-display text-2xl font-semibold mt-8 mb-4">8. Contact</h2>
             <p className="text-muted-foreground">
-              Heb je vragen over deze voorwaarden? Neem contact met ons op via info@eatspot.nl.
+              Heb je vragen over deze voorwaarden? Neem contact met ons op via info@mijn-restaurant.nl.
             </p>
           </div>
         </div>
