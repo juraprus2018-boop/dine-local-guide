@@ -48,7 +48,7 @@ export function Header() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center">
-            <img src={mijnRestaurantLogo} alt="Mijn Restaurant" className="h-14" />
+            <img src={mijnRestaurantLogo} alt="Mijn Restaurant" className="h-5" />
           </Link>
 
           {/* Desktop Navigation */}
