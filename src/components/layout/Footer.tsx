@@ -43,7 +43,7 @@ export function Footer() {
           {/* Brand */}
           <div className="lg:col-span-1">
             <Link to="/">
-              <img src={mijnRestaurantLogo} alt="Mijn Restaurant" className="h-28 md:h-32" />
+              <img src={mijnRestaurantLogo} alt="Mijn Restaurant" className="h-10 object-contain" />
             </Link>
             <p className="mt-4 text-sm text-muted-foreground">
               Ontdek de beste restaurants in Nederland. Van gezellige eetcafés tot sterrenrestaurants.
