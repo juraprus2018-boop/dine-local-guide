@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    /* Brand Colors - Happio Coral */
+    /* Brand Colors - Mijn Restaurant Green #4a9b4e */
     --background: 0 0% 100%;
     --foreground: 0 0% 20%;
 
@@ -16,8 +16,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 20%;
 
-    /* Primary - Happio Coral #E86A5C */
-    --primary: 5 76% 63%;
+    /* Primary - Mijn Restaurant Green #4a9b4e */
+    --primary: 122 35% 45%;
     --primary-foreground: 0 0% 100%;
 
     /* Secondary - Light gray */
@@ -27,8 +27,8 @@
     --muted: 0 0% 96%;
     --muted-foreground: 0 0% 45%;
 
-    /* Accent - Darker coral for contrast */
-    --accent: 5 76% 55%;
+    /* Accent - Darker green for contrast */
+    --accent: 122 40% 38%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
@@ -36,11 +36,11 @@
 
     --border: 0 0% 90%;
     --input: 0 0% 90%;
-    --ring: 5 76% 63%;
+    --ring: 122 35% 45%;
 
     --radius: 0.5rem;
 
-    /* Custom Happio tokens */
+    /* Custom tokens */
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
     
@@ -51,7 +51,7 @@
     --info-foreground: 0 0% 100%;
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(5 76% 63%) 0%, hsl(5 76% 55%) 100%);
+    --gradient-primary: linear-gradient(135deg, hsl(122 35% 45%) 0%, hsl(122 40% 38%) 100%);
     --gradient-hero: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(0 0% 98%) 100%);
     --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(0 0% 99%) 100%);
 
@@ -60,23 +60,23 @@
     --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.05), 0 2px 4px -2px hsl(0 0% 0% / 0.05);
     --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.08), 0 4px 6px -4px hsl(0 0% 0% / 0.05);
     --shadow-xl: 0 20px 25px -5px hsl(0 0% 0% / 0.1), 0 8px 10px -6px hsl(0 0% 0% / 0.05);
-    --shadow-glow: 0 0 40px hsl(5 76% 63% / 0.15);
+    --shadow-glow: 0 0 40px hsl(122 35% 45% / 0.15);
 
     /* Sidebar */
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 0 0% 20%;
-    --sidebar-primary: 5 76% 63%;
+    --sidebar-primary: 122 35% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 0 0% 96%;
     --sidebar-accent-foreground: 0 0% 20%;
     --sidebar-border: 0 0% 90%;
-    --sidebar-ring: 5 76% 63%;
+    --sidebar-ring: 122 35% 45%;
 
     /* Rating colors */
     --rating-excellent: 142 71% 45%;
     --rating-good: 80 60% 45%;
     --rating-average: 38 92% 50%;
-    --rating-poor: 5 76% 63%;
+    --rating-poor: 0 72% 51%;
     --rating-bad: 0 72% 51%;
   }
 
@@ -90,7 +90,7 @@
     --popover: 220 18% 12%;
     --popover-foreground: 0 0% 95%;
 
-    --primary: 16 85% 55%;
+    --primary: 122 40% 50%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 220 15% 18%;
@@ -99,7 +99,7 @@
     --muted: 220 15% 18%;
     --muted-foreground: 220 10% 60%;
 
-    --accent: 174 60% 45%;
+    --accent: 122 35% 42%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
@@ -107,16 +107,16 @@
 
     --border: 220 15% 20%;
     --input: 220 15% 20%;
-    --ring: 16 85% 55%;
+    --ring: 122 40% 50%;
 
     --sidebar-background: 220 20% 8%;
     --sidebar-foreground: 0 0% 95%;
-    --sidebar-primary: 16 85% 55%;
+    --sidebar-primary: 122 40% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 220 15% 18%;
     --sidebar-accent-foreground: 0 0% 95%;
     --sidebar-border: 220 15% 20%;
-    --sidebar-ring: 16 85% 55%;
+    --sidebar-ring: 122 40% 50%;
   }
 }
 
@@ -280,7 +280,7 @@
     font-weight: 600;
     color: white;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25), 0 0 0 4px rgba(255, 255, 255, 0.8);
-    background: linear-gradient(135deg, hsl(5 76% 63%) 0%, hsl(5 76% 50%) 100%);
+    background: linear-gradient(135deg, hsl(122 35% 45%) 0%, hsl(122 40% 38%) 100%);
     transition: transform 0.2s ease;
   }
 
