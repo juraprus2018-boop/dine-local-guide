@@ -74,7 +74,7 @@ export function RestaurantCard({ restaurant, className }: RestaurantCardProps) {
 
   return (
     <Link to={`/${citySlug}/${restaurant.slug}`}>
-      <Card className={cn('group overflow-hidden card-hover border-0 shadow-md', className)}>
+      <Card className={cn('group overflow-hidden card-hover border-0 shadow-md w-full max-w-full', className)}>
         <div className="relative aspect-[4/3] overflow-hidden">
           <img
             src={imageUrl}
