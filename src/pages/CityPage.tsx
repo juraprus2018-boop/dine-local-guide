@@ -1,6 +1,6 @@
 import { useParams, useSearchParams, Link, Navigate } from 'react-router-dom';
 import { useState, useMemo } from 'react';
-import { MapPin, Filter, Grid, List, SlidersHorizontal, Utensils, Star, TrendingUp } from 'lucide-react';
+import { MapPin, Filter, Grid, List, SlidersHorizontal, Utensils, Star, TrendingUp, Trophy, UtensilsCrossed, Wine } from 'lucide-react';
 import NotFound from './NotFound';
 import { Layout } from '@/components/layout';
 import { RestaurantCard } from '@/components/restaurants/RestaurantCard';
@@ -554,6 +554,53 @@ export default function CityPage() {
                     </div>
                   </div>
                 )}
+
+                {/* Internal Links to SEO Pages */}
+                <div className="mt-10">
+                  <h3 className="text-lg font-semibold mb-4">
+                    Meer over {city.name}
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <Link 
+                      to={`/uiteten-in/${city.slug}`}
+                      className="flex items-center gap-3 p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors group"
+                    >
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                        <UtensilsCrossed className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Uit eten in {city.name}</p>
+                        <p className="text-sm text-muted-foreground">Tips & inspiratie</p>
+                      </div>
+                    </Link>
+                    
+                    <Link 
+                      to={`/beste-restaurants/${city.slug}`}
+                      className="flex items-center gap-3 p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors group"
+                    >
+                      <div className="h-10 w-10 rounded-full bg-yellow-500/10 flex items-center justify-center group-hover:bg-yellow-500/20 transition-colors">
+                        <Trophy className="h-5 w-5 text-yellow-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Beste restaurants</p>
+                        <p className="text-sm text-muted-foreground">Top {stats?.reviewedRestaurants || 10} ranglijst</p>
+                      </div>
+                    </Link>
+                    
+                    <Link 
+                      to={`/eten-en-drinken/${city.slug}`}
+                      className="flex items-center gap-3 p-4 bg-secondary/30 rounded-lg hover:bg-secondary/50 transition-colors group"
+                    >
+                      <div className="h-10 w-10 rounded-full bg-orange-500/10 flex items-center justify-center group-hover:bg-orange-500/20 transition-colors">
+                        <Wine className="h-5 w-5 text-orange-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium">Eten & Drinken</p>
+                        <p className="text-sm text-muted-foreground">Complete horecagids</p>
+                      </div>
+                    </Link>
+                  </div>
+                </div>
 
                 {/* FAQ Section for SEO */}
                 <div className="mt-10">
