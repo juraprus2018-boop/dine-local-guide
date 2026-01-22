@@ -472,7 +472,7 @@ export default function CityPage() {
           ) : restaurants.length > 0 ? (
             <div className={
               viewMode === 'grid'
-                ? 'grid gap-6 sm:grid-cols-2 lg:grid-cols-3'
+                ? 'grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3'
                 : 'space-y-4'
             }>
               {restaurants.map((restaurant) => (
