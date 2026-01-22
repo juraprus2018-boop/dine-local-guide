@@ -1,5 +1,8 @@
-# Sitemap redirect to Supabase Edge Function
-/sitemap.xml https://eoxcxesrejwbczhyjjsf.supabase.co/functions/v1/sitemap 200
+# Sitemap index (generated at build time)
+/sitemap.xml /sitemap.xml 200
+
+# Per-city sitemaps (generated at build time)
+/sitemaps/* /sitemaps/:splat 200
 
 # SPA fallback
 /* /index.html 200
