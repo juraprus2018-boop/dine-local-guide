@@ -29,9 +29,8 @@ const footerLinks = {
 };
 
 const socialLinks = [
-  { icon: Facebook, href: 'https://facebook.com', label: 'Facebook' },
-  { icon: Instagram, href: 'https://instagram.com', label: 'Instagram' },
-  { icon: Twitter, href: 'https://twitter.com', label: 'Twitter' },
+  { icon: Facebook, href: 'https://www.facebook.com/restaurantgids24/', label: 'Facebook' },
+  { icon: Twitter, href: 'https://x.com/restaurant_mijn', label: 'X' },
   { icon: Mail, href: 'mailto:info@mijn-restaurant.nl', label: 'Email' },
 ];
 
