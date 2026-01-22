@@ -200,39 +200,52 @@ export function useReviews(restaurantId: string) {
 }
 
 // Fetch nearby restaurants based on coordinates
-export function useNearbyRestaurants(latitude: number | null, longitude: number | null, limit = 10) {
+export function useNearbyRestaurants(latitude: number | null, longitude: number | null, limit = 20) {
   return useQuery({
     queryKey: ['nearbyRestaurants', latitude, longitude, limit],
     queryFn: async () => {
       if (!latitude || !longitude) return [];
 
-      // Fetch all restaurants with city info
+      // Use the database function for efficient nearby search
       const { data, error } = await supabase
-        .from('restaurants')
-        .select(`
-          *,
-          city:cities(*),
-          cuisines:restaurant_cuisines(cuisine:cuisine_types(*))
-        `)
-        .not('latitude', 'is', null)
-        .not('longitude', 'is', null);
+        .rpc('get_nearby_restaurants', {
+          user_lat: latitude,
+          user_lng: longitude,
+          max_distance_km: 50,
+          result_limit: limit
+        });
 
       if (error) throw error;
 
-      // Calculate distance and sort
-      const restaurantsWithDistance = (data || []).map((r: any) => {
-        const distance = calculateDistance(latitude, longitude, r.latitude, r.longitude);
+      // Fetch city and cuisine data for each restaurant
+      const restaurantIds = (data || []).map((r: any) => r.id);
+      
+      if (restaurantIds.length === 0) return [];
+
+      // Fetch cities for the restaurants
+      const { data: restaurantsWithRelations } = await supabase
+        .from('restaurants')
+        .select(`
+          id,
+          city:cities(*),
+          cuisines:restaurant_cuisines(cuisine:cuisine_types(*))
+        `)
+        .in('id', restaurantIds);
+
+      // Merge the data
+      const relationMap = new Map(
+        (restaurantsWithRelations || []).map((r: any) => [r.id, r])
+      );
+
+      return (data || []).map((r: any) => {
+        const relations = relationMap.get(r.id) || {};
         return {
           ...r,
-          cuisines: r.cuisines?.map((c: any) => c.cuisine) || [],
-          distance,
+          city: relations.city || null,
+          cuisines: relations.cuisines?.map((c: any) => c.cuisine) || [],
+          distance: r.distance_km, // Use the distance from the database function
         };
       });
-
-      // Sort by distance and limit
-      return restaurantsWithDistance
-        .sort((a, b) => a.distance - b.distance)
-        .slice(0, limit);
     },
     enabled: !!latitude && !!longitude,
   });

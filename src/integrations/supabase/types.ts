@@ -743,6 +743,44 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_nearby_restaurants: {
+        Args: {
+          max_distance_km?: number
+          result_limit?: number
+          user_lat: number
+          user_lng: number
+        }
+        Returns: {
+          address: string
+          city_id: string
+          created_at: string
+          description: string
+          distance_km: number
+          email: string
+          features: Json
+          google_place_id: string
+          id: string
+          image_url: string
+          is_claimed: boolean
+          is_verified: boolean
+          latitude: number
+          longitude: number
+          meta_description: string
+          meta_title: string
+          name: string
+          opening_hours: Json
+          owner_id: string
+          phone: string
+          postal_code: string
+          price_range: Database["public"]["Enums"]["price_range"]
+          rating: number
+          review_count: number
+          slug: string
+          specialties: string[]
+          updated_at: string
+          website: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
