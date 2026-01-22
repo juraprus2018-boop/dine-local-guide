@@ -1,6 +1,9 @@
 # Sitemap index (generated at build time)
 /sitemap.xml /sitemap.xml 200
 
+# Backward-compatible: some bots/tools request this path
+/sitemaps/sitemap.xml /sitemap.xml 301
+
 # Per-city sitemaps (generated at build time)
 /sitemaps/* /sitemaps/:splat 200
 
