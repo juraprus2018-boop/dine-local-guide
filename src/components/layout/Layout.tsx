@@ -110,7 +110,7 @@ export function Layout({
           )
         )}
       </Helmet>
-      <div className="flex min-h-screen flex-col">
+      <div className="flex min-h-screen flex-col overflow-x-hidden">
         <Header />
         <main className="flex-1">{children}</main>
         {!noFooter && <Footer />}
