@@ -1,5 +1,6 @@
 import { Utensils, Star, MapPin, TrendingUp } from 'lucide-react';
 import { SearchBar } from '@/components/search/SearchBar';
+import heroHeader from '@/assets/hero-header.jpg';
 
 interface HeroSectionProps {
   restaurantCount: number;
@@ -9,12 +10,15 @@ interface HeroSectionProps {
 
 export function HeroSection({ restaurantCount, reviewCount, cityCount }: HeroSectionProps) {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-accent/5 pb-20 pt-16 md:pb-32 md:pt-24">
-      {/* Background decorations */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-radial from-primary/5 to-transparent rounded-full" />
+    <section className="relative overflow-hidden pb-20 pt-16 md:pb-32 md:pt-24">
+      {/* Hero background image */}
+      <div className="absolute inset-0">
+        <img 
+          src={heroHeader} 
+          alt="Restaurant sfeer" 
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background" />
       </div>
 
       <div className="container-wide relative">
