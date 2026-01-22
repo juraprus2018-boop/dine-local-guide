@@ -38,6 +38,9 @@ import NewRestaurantsPage from "./pages/NewRestaurantsPage";
 import TopRatedPage from "./pages/TopRatedPage";
 import ClaimRestaurantPage from "./pages/ClaimRestaurantPage";
 import OwnerDashboardPage from "./pages/OwnerDashboardPage";
+import EatingOutCityPage from "./pages/EatingOutCityPage";
+import BestRestaurantsCityPage from "./pages/BestRestaurantsCityPage";
+import FoodDrinkCityPage from "./pages/FoodDrinkCityPage";
 import { ScrollToTop } from "./components/ScrollToTop";
 
 const queryClient = new QueryClient();
@@ -84,6 +87,9 @@ const App = () => (
             <Route path="/admin/reviews" element={<AdminReviewsPage />} />
             <Route path="/admin/advertenties" element={<AdminAdsPage />} />
             <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
+            <Route path="/uiteten-in/:citySlug" element={<EatingOutCityPage />} />
+            <Route path="/beste-restaurants/:citySlug" element={<BestRestaurantsCityPage />} />
+            <Route path="/eten-en-drinken/:citySlug" element={<FoodDrinkCityPage />} />
             <Route path="/:citySlug" element={<CityPage />} />
             <Route path="/:citySlug/:restaurantSlug" element={<RestaurantPage />} />
             <Route path="*" element={<NotFound />} />
