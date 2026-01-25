@@ -1,4 +1,4 @@
-// Database types for Happio
+// Database types for Mijn Restaurant
 export type PriceRange = '€' | '€€' | '€€€' | '€€€€';
 export type ClaimStatus = 'pending' | 'approved' | 'rejected';
 export type AppRole = 'admin' | 'moderator' | 'user';

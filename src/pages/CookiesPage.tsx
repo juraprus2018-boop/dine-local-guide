@@ -4,7 +4,7 @@ export default function CookiesPage() {
   return (
     <Layout
       title="Cookiebeleid"
-      description="Lees ons cookiebeleid en hoe wij cookies gebruiken op Happio."
+      description="Lees ons cookiebeleid en hoe wij cookies gebruiken op Mijn Restaurant."
     >
       <div className="container-wide py-12">
         <div className="max-w-3xl mx-auto">
@@ -54,7 +54,7 @@ export default function CookiesPage() {
 
             <h2 className="font-display text-2xl font-semibold mt-8 mb-4">6. Contact</h2>
             <p className="text-muted-foreground">
-              Heb je vragen over ons cookiebeleid? Neem contact met ons op via info@happio.nl.
+              Heb je vragen over ons cookiebeleid? Neem contact met ons op via info@mijn-restaurant.nl.
             </p>
           </div>
         </div>

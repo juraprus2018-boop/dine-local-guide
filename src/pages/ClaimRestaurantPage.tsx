@@ -126,7 +126,7 @@ export default function ClaimRestaurantPage() {
         <div className="container-wide py-12 text-center">
           <h1 className="text-2xl font-bold mb-4">Dit restaurant is al geclaimed</h1>
           <p className="text-muted-foreground mb-4">
-            {restaurant.name} heeft al een eigenaar op Happio.
+            {restaurant.name} heeft al een eigenaar op Mijn Restaurant.
           </p>
           <Button asChild>
             <Link to={`/${citySlug}/${restaurantSlug}`}>Terug naar restaurant</Link>
@@ -296,13 +296,13 @@ function ClaimSearchPage() {
   return (
     <Layout
       title="Restaurant claimen"
-      description="Claim je restaurant op Happio en beheer je vermelding, foto's en reageer op reviews."
+      description="Claim je restaurant op Mijn Restaurant en beheer je vermelding, foto's en reageer op reviews."
     >
       <div className="container-wide py-12">
         <div className="text-center mb-12">
           <h1 className="font-display text-4xl font-bold">Restaurant claimen</h1>
           <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Is je restaurant al op Happio? Zoek het hieronder en claim het.
+            Is je restaurant al op Mijn Restaurant? Zoek het hieronder en claim het.
           </p>
         </div>
 

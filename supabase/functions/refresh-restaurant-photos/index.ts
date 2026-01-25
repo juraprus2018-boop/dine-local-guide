@@ -38,7 +38,7 @@ async function downloadAndUploadPhoto(
     const arrayBuffer = await imageBlob.arrayBuffer();
     const uint8Array = new Uint8Array(arrayBuffer);
     
-    const baseName = `${restaurantSlug}-${citySlug}-happio`;
+    const baseName = `${restaurantSlug}-${citySlug}-mijn-restaurant`;
     const fileName = photoIndex === 0 
       ? `${baseName}.jpg`
       : `${baseName}-${photoIndex + 1}.jpg`;

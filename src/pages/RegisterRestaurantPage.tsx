@@ -139,7 +139,7 @@ export default function RegisterRestaurantPage() {
   return (
     <Layout 
       title="Restaurant aanmelden"
-      description="Meld je restaurant gratis aan bij Happio en bereik duizenden potentiële gasten."
+      description="Meld je restaurant gratis aan bij Mijn Restaurant en bereik duizenden potentiële gasten."
     >
       <div className="container-narrow py-12 md:py-20">
         {/* Header */}
@@ -152,7 +152,7 @@ export default function RegisterRestaurantPage() {
             Restaurant aanmelden
           </h1>
           <p className="text-muted-foreground max-w-xl mx-auto">
-            Voeg je restaurant toe aan Happio en bereik duizenden potentiële gasten. 
+            Voeg je restaurant toe aan Mijn Restaurant en bereik duizenden potentiële gasten. 
             Volledig gratis en binnen enkele minuten geregeld.
           </p>
         </div>
@@ -359,7 +359,7 @@ export default function RegisterRestaurantPage() {
                 </Button>
                 <p className="text-xs text-muted-foreground text-center mt-4">
                   Door je aan te melden ga je akkoord met onze voorwaarden. 
-                  Heb je al een restaurant op Happio?{' '}
+                  Heb je al een restaurant op Mijn Restaurant?{' '}
                   <Link to="/claimen" className="text-primary hover:underline">
                     Claim je restaurant
                   </Link>

@@ -31,7 +31,7 @@ export default function BlogPage() {
   return (
     <Layout
       title="Blog"
-      description="Lees het laatste nieuws over restaurants, food trends en culinaire tips op de Happio blog."
+      description="Lees het laatste nieuws over restaurants, food trends en culinaire tips op de Mijn Restaurant blog."
     >
       <div className="container-wide py-12">
         <div className="text-center mb-12">
