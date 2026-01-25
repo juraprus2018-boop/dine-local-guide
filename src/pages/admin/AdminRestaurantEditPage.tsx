@@ -309,7 +309,7 @@ export default function AdminRestaurantEditPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <Label>Geverifieerd</Label>
-                      <p className="text-sm text-muted-foreground">Restaurant is gecontroleerd door Happio</p>
+                      <p className="text-sm text-muted-foreground">Restaurant is gecontroleerd door Mijn Restaurant</p>
                     </div>
                     <Switch checked={isVerified} onCheckedChange={setIsVerified} />
                   </div>

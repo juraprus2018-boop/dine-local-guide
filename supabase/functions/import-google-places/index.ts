@@ -191,8 +191,8 @@ async function downloadAndUploadPhoto(
     const arrayBuffer = await imageBlob.arrayBuffer();
     const uint8Array = new Uint8Array(arrayBuffer);
     
-    // New naming: restaurant-name-city-happio.jpg
-    const baseName = `${restaurantSlug}-${citySlug}-happio`;
+    // New naming: restaurant-name-city-mijn-restaurant.jpg
+    const baseName = `${restaurantSlug}-${citySlug}-mijn-restaurant`;
     const fileName = photoIndex === 0 
       ? `${baseName}.jpg`
       : `${baseName}-${photoIndex + 1}.jpg`;
@@ -218,8 +218,8 @@ async function downloadAndUploadPhoto(
     
     // SEO-friendly alt text with restaurant name and city
     const altText = photoIndex === 0 
-      ? `${restaurantName} restaurant ${cityName} - Happio`
-      : `${restaurantName} ${cityName} foto ${photoIndex + 1} - Happio`;
+      ? `${restaurantName} restaurant ${cityName} - Mijn Restaurant`
+      : `${restaurantName} ${cityName} foto ${photoIndex + 1} - Mijn Restaurant`;
     
     return {
       url: publicUrl.publicUrl,
@@ -378,7 +378,7 @@ serve(async (req) => {
                 latitude: cityInfo.latitude,
                 longitude: cityInfo.longitude,
                 description: `Ontdek de beste restaurants in ${cityInfo.name}${cityInfo.province ? `, ${cityInfo.province}` : ''}. Van gezellige eetcafés tot fine dining.`,
-                meta_title: `Beste Restaurants ${cityInfo.name} | Reviews & Menu's | Happio`,
+                meta_title: `Beste Restaurants ${cityInfo.name} | Reviews & Menu's | Mijn Restaurant`,
                 meta_description: `Vind de ${cityInfo.name} beste restaurants. Lees reviews, bekijk menu's en reserveer direct. ✓ Actuele openingstijden ✓ Foto's ✓ Beoordelingen`,
               })
               .select()
@@ -497,7 +497,7 @@ serve(async (req) => {
         const ratingText = details.rating ? `★ ${details.rating.toFixed(1)}` : '';
         const metaParts = [ratingText, priceText].filter(Boolean).join(' · ');
         
-        const metaTitle = `${details.name} ${cityInfo.name} | ${metaParts ? metaParts + ' | ' : ''}Happio`;
+        const metaTitle = `${details.name} ${cityInfo.name} | ${metaParts ? metaParts + ' | ' : ''}Mijn Restaurant`;
         const metaDescription = `${details.name} in ${cityInfo.name}${cityInfo.province ? `, ${cityInfo.province}` : ''}. ${ratingText ? `Beoordeling: ${ratingText}. ` : ''}Bekijk menu, openingstijden en reserveer online. ✓ Reviews ✓ Foto's`;
 
         // Insert restaurant

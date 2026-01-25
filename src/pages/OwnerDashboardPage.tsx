@@ -31,7 +31,7 @@ export default function OwnerDashboardPage() {
 
   if (!user) {
     return (
-      <Layout title="Eigenaar Dashboard" description="Beheer je restaurant op Happio.">
+      <Layout title="Eigenaar Dashboard" description="Beheer je restaurant op Mijn Restaurant.">
         <div className="container-wide py-12">
           <div className="text-center py-16">
             <Store className="h-16 w-16 mx-auto text-muted-foreground/50 mb-4" />
@@ -49,7 +49,7 @@ export default function OwnerDashboardPage() {
   }
 
   return (
-    <Layout title="Eigenaar Dashboard" description="Beheer je restaurant op Happio.">
+    <Layout title="Eigenaar Dashboard" description="Beheer je restaurant op Mijn Restaurant.">
       <div className="container-wide py-12">
         <div className="mb-8">
           <h1 className="font-display text-3xl font-bold">Eigenaar Dashboard</h1>

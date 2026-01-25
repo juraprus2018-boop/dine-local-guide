@@ -610,24 +610,24 @@ export default function RestaurantPage() {
                   {/* Reviews List */}
                   {(() => {
                     const googleReviews = reviews?.filter((r: any) => r.is_verified && !r.user_id && !r.guest_email) || [];
-                    const happioReviews = reviews?.filter((r: any) => !r.is_verified || r.user_id || r.guest_email) || [];
+                    const mijnRestaurantReviews = reviews?.filter((r: any) => !r.is_verified || r.user_id || r.guest_email) || [];
                     
                     return (
                       <div className="space-y-6">
-                        {/* Happio Reviews Section */}
+                        {/* Mijn Restaurant Reviews Section */}
                         <div>
                           <div className="flex items-center gap-2 mb-4">
                             <Badge variant="default" className="bg-primary">
-                              Happio Reviews
+                              Mijn Restaurant Reviews
                             </Badge>
                             <span className="text-sm text-muted-foreground">
-                              ({happioReviews.length} {happioReviews.length === 1 ? 'review' : 'reviews'})
+                              ({mijnRestaurantReviews.length} {mijnRestaurantReviews.length === 1 ? 'review' : 'reviews'})
                             </span>
                           </div>
                           
-                          {happioReviews.length > 0 ? (
+                          {mijnRestaurantReviews.length > 0 ? (
                             <div className="space-y-4">
-                              {happioReviews.map((review: any) => (
+                              {mijnRestaurantReviews.map((review: any) => (
                                 <Card key={review.id} className="border-primary/20">
                                   <CardContent className="pt-6">
                                     <div className="flex items-start gap-4">
@@ -644,7 +644,7 @@ export default function RestaurantPage() {
                                               {review.profile?.display_name || review.guest_name || 'Gast'}
                                             </span>
                                             <Badge variant="outline" className="text-xs border-primary/30 text-primary">
-                                              Happio
+                                              Mijn Restaurant
                                             </Badge>
                                           </div>
                                           <span className="text-sm text-muted-foreground">
@@ -670,7 +670,7 @@ export default function RestaurantPage() {
                             <Card className="border-dashed border-primary/30">
                               <CardContent className="py-8 text-center">
                                 <p className="text-muted-foreground">
-                                  Nog geen Happio reviews. Wees de eerste!
+                                  Nog geen Mijn Restaurant reviews. Wees de eerste!
                                 </p>
                               </CardContent>
                             </Card>

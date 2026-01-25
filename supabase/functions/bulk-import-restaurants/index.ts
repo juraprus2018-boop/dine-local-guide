@@ -374,7 +374,7 @@ async function downloadAndUploadImage(
     if (!response.ok) return null;
 
     const blob = await response.blob();
-    const fileName = `${citySlug}/${restaurantSlug}/${restaurantSlug}-${citySlug}-happio.jpg`;
+    const fileName = `${citySlug}/${restaurantSlug}/${restaurantSlug}-${citySlug}-mijn-restaurant.jpg`;
 
     const { error: uploadError } = await supabase.storage
       .from('restaurant-photos')
@@ -450,7 +450,7 @@ async function processCity(
         latitude: cityData.lat,
         longitude: cityData.lng,
         description: `Ontdek de beste restaurants in ${cityData.name}, ${cityData.province}. Van gezellige eetcafés tot fine dining.`,
-        meta_title: `Beste Restaurants ${cityData.name} | Reviews & Menu's | Happio`,
+        meta_title: `Beste Restaurants ${cityData.name} | Reviews & Menu's | Mijn Restaurant`,
         meta_description: `Vind de ${cityData.name} beste restaurants. Lees reviews, bekijk menu's en reserveer direct. ✓ Actuele openingstijden ✓ Foto's ✓ Beoordelingen`,
       })
       .select('id')

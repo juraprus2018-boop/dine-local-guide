@@ -125,7 +125,7 @@ export default function FoodwallPage() {
   return (
     <Layout
       title="Foodwall"
-      description="Ontdek heerlijke gerechten gedeeld door de Happio community. Deel je eigen food foto's en ontdek nieuwe restaurants."
+      description="Ontdek heerlijke gerechten gedeeld door de Mijn Restaurant community. Deel je eigen food foto's en ontdek nieuwe restaurants."
     >
       {/* Hero */}
       <section className="bg-gradient-to-b from-secondary/50 to-background py-8 md:py-12">
