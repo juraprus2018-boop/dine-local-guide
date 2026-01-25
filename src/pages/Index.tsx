@@ -48,11 +48,13 @@ export default function Index() {
         "item": {
           "@type": "Restaurant",
           "name": r.name,
-          "aggregateRating": r.rating ? {
-            "@type": "AggregateRating",
-            "ratingValue": Number(r.rating).toFixed(1),
-            "reviewCount": r.review_count
-          } : undefined
+          ...(r.rating && r.review_count && r.review_count > 0 ? {
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": Number(r.rating).toFixed(1),
+              "reviewCount": r.review_count
+            }
+          } : {})
         }
       }))
     }
