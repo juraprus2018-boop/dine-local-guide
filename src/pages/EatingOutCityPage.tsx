@@ -184,7 +184,15 @@ export default function EatingOutCityPage() {
           "@type": "Restaurant",
           "name": r.name,
           "url": `https://www.mijn-restaurant.nl/${city.slug}/${r.slug}`,
-          ...(r.rating && { "aggregateRating": { "@type": "AggregateRating", "ratingValue": r.rating, "reviewCount": r.review_count || 1 } })
+          ...(r.rating && r.review_count && r.review_count > 0
+            ? {
+                "aggregateRating": {
+                  "@type": "AggregateRating",
+                  "ratingValue": r.rating,
+                  "reviewCount": r.review_count,
+                },
+              }
+            : {})
         }
       }))
     }
