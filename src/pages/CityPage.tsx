@@ -205,11 +205,11 @@ export default function CityPage() {
           "addressLocality": city.name,
           "addressCountry": "NL"
         },
-        ...(r.rating ? {
+        ...(r.rating && r.review_count && r.review_count > 0 ? {
           "aggregateRating": {
             "@type": "AggregateRating",
             "ratingValue": Number(r.rating).toFixed(1),
-            "reviewCount": r.review_count || 0,
+            "reviewCount": r.review_count,
             "bestRating": 5,
             "worstRating": 1
           }
