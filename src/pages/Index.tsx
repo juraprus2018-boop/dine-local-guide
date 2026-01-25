@@ -28,7 +28,7 @@ export default function Index() {
   
   // Calculate stats
   const totalRestaurants = 10000; // Could be fetched dynamically
-  const totalReviews = 50000; // Could be fetched dynamically
+  const totalReviews = 0; // Only count real website reviews, not Google scores
   const totalCities = popularCities?.length ? Math.max(popularCities.length, 150) : 150;
 
   // Homepage JSON-LD
