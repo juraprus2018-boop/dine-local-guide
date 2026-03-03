@@ -29,6 +29,7 @@ import { verifyRecaptcha } from '@/hooks/useRecaptcha';
 import { supabase } from '@/integrations/supabase/client';
 import type { OpeningHours, DayHours } from '@/types/database';
 import placeholderRestaurant from '@/assets/placeholder-restaurant.jpg';
+import { Stay22Widget } from '@/components/Stay22Widget';
 
 const dayNames: Record<string, string> = {
   monday: 'Maandag',
@@ -890,6 +891,12 @@ export default function RestaurantPage() {
               {/* Advertisement */}
               <AdBlock placementType="detail_sidebar" />
             </div>
+          </div>
+
+          {/* Stay22 Hotels Widget */}
+          <div className="mt-8">
+            <h2 className="font-display text-2xl font-bold mb-4">Hotels in de buurt</h2>
+            <Stay22Widget latitude={restaurant.latitude} longitude={restaurant.longitude} />
           </div>
         </div>
       </section>
