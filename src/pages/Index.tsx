@@ -5,6 +5,7 @@ import { TopRatedSection } from '@/components/home/TopRatedSection';
 import { CuisinesSection } from '@/components/home/CuisinesSection';
 import { CTASection } from '@/components/home/CTASection';
 import { AdBlock } from '@/components/ads/AdBlock';
+import { Stay22Widget } from '@/components/Stay22Widget';
 import { useCuisines, useRestaurants } from '@/hooks/useRestaurants';
 import { usePopularCities } from '@/hooks/usePopularCities';
 import { useTrackPageView } from '@/hooks/usePageViews';
@@ -91,6 +92,14 @@ export default function Index() {
       <section className="py-8">
         <div className="container-wide">
           <AdBlock placementType="homepage" />
+        </div>
+      </section>
+
+      {/* Stay22 Hotels Widget */}
+      <section className="py-8">
+        <div className="container-wide">
+          <h2 className="font-display text-2xl font-bold mb-4">Hotels in Nederland</h2>
+          <Stay22Widget latitude={52.3676} longitude={4.9041} />
         </div>
       </section>
 
